@@ -494,6 +494,7 @@
   }
 
   function clearEmote(skipLayerClear = false) {
+    const completedEmoteName = activeEmote?.name || null;
     if (emoteGifTimeout) { clearTimeout(emoteGifTimeout); emoteGifTimeout = null; }
     emoteState = 'inactive';
     activeEmote = null;
@@ -529,6 +530,13 @@
     } else {
       // Immediate cleanup of old content (new emote is about to load)
       emoteLayer.innerHTML = '';
+    }
+    if (completedEmoteName && ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'emote_status',
+        action: 'completed',
+        name: completedEmoteName
+      }));
     }
     console.log(`[emote] Cleared, returning to expression tracking`);
   }

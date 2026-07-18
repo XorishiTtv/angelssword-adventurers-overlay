@@ -4,6 +4,7 @@ const { WebSocketServer } = require('ws');
 const dgram = require('dgram');
 const path = require('path');
 const fs = require('fs');
+const { installAutomationApi } = require('./automation-api');
 
 // When compiled with pkg, __dirname points to a virtual snapshot filesystem.
 // Use the exe's real directory for static files (public/, assets/).
@@ -12,6 +13,7 @@ const APP_DIR = process.pkg ? path.dirname(process.execPath) : __dirname;
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, maxPayload: 64 * 1024 }); // 64KB max message
+let automationApi = { recordTracking() {} };
 
 // ── Config ──────────────────────────────────────────
 const PREFERRED_PORT = 3000;
@@ -482,7 +484,7 @@ wss.on('connection', (ws, req) => {
 
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const rawType = url.searchParams.get('type') || 'overlay';
-  const clientType = ['overlay', 'control'].includes(rawType) ? rawType : 'overlay';
+  const clientType = ['overlay', 'control', 'streamerbot'].includes(rawType) ? rawType : 'overlay';
 
   ws.clientType = clientType;
   ws.isAlive = true;
@@ -779,6 +781,7 @@ function throttledBroadcast(data) {
     pendingExpression = null;
   }
 
+  automationApi.recordTracking(data);
   broadcastAll(data);
 }
 
@@ -973,6 +976,65 @@ app.post('/api/thresholds', (req, res) => {
   if (exitBias !== undefined) { if (!isNum(exitBias, 0, 1)) return res.status(400).json({ error: 'invalid exitBias' }); EXIT_BIAS = exitBias; console.log(`[cfg] Exit bias: ${(EXIT_BIAS * 100).toFixed(0)}%`); }
   console.log(`[cfg] Thresholds updated:`, thresholds);
   res.json({ success: true, thresholds });
+});
+
+automationApi = installAutomationApi({
+  app,
+  wss,
+  clients,
+  broadcast,
+  broadcastAll,
+  assetsDir: ASSETS_DIR,
+  getPort: () => PORT,
+  getActiveModel: () => activeModel,
+  setActiveModel: (model) => { activeModel = model; },
+  getActiveEmote: () => activeEmote,
+  setActiveEmote: (emote) => { activeEmote = emote; },
+  getModelDir,
+  scanModelAssets,
+  scanEmotes,
+  getCurrentExpression: () => currentExpression,
+  getThresholds: () => ({
+    ...thresholds,
+    expressionHold: HYSTERESIS_MS,
+    exitBias: EXIT_BIAS
+  }),
+  setThresholds: (input = {}) => {
+    const isNum = (value, min, max) =>
+      typeof value === 'number' && Number.isFinite(value)
+      && value >= min && value <= max;
+
+    if (input.smile !== undefined) {
+      if (!isNum(input.smile, 0, 100)) throw Object.assign(new Error('invalid smile threshold'), { status: 400, code: 'invalid_threshold' });
+      thresholds.smile = input.smile;
+    }
+    if (input.frown !== undefined) {
+      if (!isNum(input.frown, 0, 100)) throw Object.assign(new Error('invalid frown threshold'), { status: 400, code: 'invalid_threshold' });
+      thresholds.frown = input.frown;
+    }
+    if (input.surprised !== undefined) {
+      if (!isNum(input.surprised, 0, 100)) throw Object.assign(new Error('invalid surprised threshold'), { status: 400, code: 'invalid_threshold' });
+      thresholds.surprised = input.surprised;
+    }
+    if (input.eyesClosed !== undefined) {
+      if (!isNum(input.eyesClosed, 0, 100)) throw Object.assign(new Error('invalid eyesClosed threshold'), { status: 400, code: 'invalid_threshold' });
+      thresholds.eyesClosed = input.eyesClosed;
+    }
+    if (input.expressionHold !== undefined) {
+      if (!isNum(input.expressionHold, 0, 30000)) throw Object.assign(new Error('invalid expressionHold'), { status: 400, code: 'invalid_threshold' });
+      HYSTERESIS_MS = input.expressionHold;
+    }
+    if (input.exitBias !== undefined) {
+      if (!isNum(input.exitBias, 0, 1)) throw Object.assign(new Error('invalid exitBias'), { status: 400, code: 'invalid_threshold' });
+      EXIT_BIAS = input.exitBias;
+    }
+
+    return {
+      ...thresholds,
+      expressionHold: HYSTERESIS_MS,
+      exitBias: EXIT_BIAS
+    };
+  }
 });
 
 // ── Start (auto-find available port) ────────────────
