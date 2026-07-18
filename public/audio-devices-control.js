@@ -211,8 +211,13 @@
   async function requestAudioPermission() {
     if (permissionRequested || !navigator.mediaDevices.getUserMedia) return;
     permissionRequested = true;
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    stream.getTracks().forEach(track => track.stop());
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      stream.getTracks().forEach(track => track.stop());
+    } catch (error) {
+      permissionRequested = false;
+      throw error;
+    }
   }
 
   async function refreshDevices({ requestPermission = false } = {}) {
@@ -326,7 +331,7 @@
   });
 
   window.addEventListener('as-speaking-source-ended', event => {
-    if (event.detail?.source !== 'output') return;
+    if (event.detail?.source !== 'output' || currentSource() !== 'output') return;
     if (detectionIsActive()) stopMicButton?.click();
     sourceStatus.textContent = 'Output sharing ended. Click “Share Output Audio” to start again.';
     sourceStatus.style.color = '#e8a33a';
