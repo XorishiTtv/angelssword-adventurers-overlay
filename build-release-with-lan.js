@@ -1,0 +1,133 @@
+#!/usr/bin/env node
+'use strict';
+
+/**
+ * Builds the standard release, then adds a separate opt-in LAN executable and
+ * launcher. The default executable remains localhost-only.
+ */
+
+const { execFileSync, execSync } = require('child_process');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const archiver = require('archiver');
+
+const ROOT = __dirname;
+const RELEASE_DIR = path.join(ROOT, 'release');
+const RELEASE = path.join(RELEASE_DIR, 'ASAdventurer');
+const LAN_EXE = path.join(RELEASE, 'ASAdventurerLAN.exe');
+const ZIP_PATH = path.join(RELEASE_DIR, 'ASAdventurer.zip');
+
+function log(message) {
+  console.log(`  ${message}`);
+}
+
+function buildLanExecutable() {
+  const icon = path.join(ROOT, 'icon.ico');
+  const command = [
+    'npx --yes pkg',
+    `"${path.join(ROOT, 'lan-server.js')}"`,
+    '--targets node18-win-x64',
+    '--output', `"${LAN_EXE}"`,
+    '--compress GZip',
+    fs.existsSync(icon) ? `--icon "${icon}"` : ''
+  ].filter(Boolean).join(' ');
+
+  log('Compiling LAN launcher -> ASAdventurerLAN.exe ...');
+  execSync(command, { stdio: 'inherit', cwd: ROOT });
+}
+
+function writeLanLauncher() {
+  fs.writeFileSync(path.join(RELEASE, 'Start AS Adventurer LAN.bat'),
+`@echo off
+echo.
+echo  ============================================
+echo   AS Adventurer - LAN Mode
+echo  ============================================
+echo.
+echo  This mode is visible to other devices on your
+echo  trusted home/private network.
+echo.
+echo  Use one of the network URLs printed below.
+echo  Press Ctrl+C to stop the server.
+echo.
+cd /d "%~dp0"
+ASAdventurerLAN.exe
+pause
+`);
+}
+
+function addLanDocumentation() {
+  const sourceGuide = path.join(ROOT, 'LAN_SETUP.md');
+  if (fs.existsSync(sourceGuide)) {
+    fs.copyFileSync(sourceGuide, path.join(RELEASE, 'LAN_SETUP.md'));
+  }
+
+  const readmePath = path.join(RELEASE, 'README.md');
+  const marker = '## Running on another computer';
+  let readme = fs.readFileSync(readmePath, 'utf8');
+  if (!readme.includes(marker)) {
+    readme += `\n\n${marker}\n\nFor a second computer on the same trusted private network, double-click\n\`Start AS Adventurer LAN.bat\`. The console prints the Control Panel and OBS\nOverlay URLs to use on the other computer. See \`LAN_SETUP.md\` for firewall,\nsecurity, and browser camera/microphone notes.\n`;
+    fs.writeFileSync(readmePath, readme);
+  }
+}
+
+function writeLanChecksum() {
+  const hash = crypto.createHash('sha256').update(fs.readFileSync(LAN_EXE)).digest('hex');
+  fs.writeFileSync(path.join(RELEASE, 'CHECKSUM-LAN.txt'),
+`SHA256 Checksum for ASAdventurerLAN.exe
+========================================
+
+${hash}
+
+To verify on Windows, open PowerShell and run:
+  Get-FileHash ASAdventurerLAN.exe -Algorithm SHA256
+`);
+  log(`LAN SHA256: ${hash}`);
+}
+
+function createZip() {
+  return new Promise((resolve, reject) => {
+    if (fs.existsSync(ZIP_PATH)) fs.unlinkSync(ZIP_PATH);
+
+    const output = fs.createWriteStream(ZIP_PATH);
+    const archive = archiver('zip', { zlib: { level: 9 } });
+
+    output.on('close', resolve);
+    output.on('error', reject);
+    archive.on('error', reject);
+
+    archive.pipe(output);
+    archive.directory(RELEASE, 'ASAdventurer');
+    archive.finalize();
+  });
+}
+
+async function main() {
+  console.log('');
+  console.log('  Building standard release first...');
+  execFileSync(process.execPath, [path.join(ROOT, 'build-release.js')], {
+    stdio: 'inherit',
+    cwd: ROOT
+  });
+
+  buildLanExecutable();
+  writeLanLauncher();
+  addLanDocumentation();
+  writeLanChecksum();
+
+  log('Rebuilding release ZIP with LAN files...');
+  await createZip();
+  const zipMB = (fs.statSync(ZIP_PATH).size / 1024 / 1024).toFixed(1);
+
+  console.log('');
+  log('LAN-enabled release complete.');
+  log(`Archive: release/ASAdventurer.zip (${zipMB} MB)`);
+  log('Default launcher remains localhost-only.');
+  console.log('');
+}
+
+main().catch(error => {
+  console.error('\n  LAN release build failed:', error.message);
+  process.exitCode = 1;
+});
