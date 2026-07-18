@@ -2,8 +2,9 @@
 'use strict';
 
 /**
- * Builds the standard release, then adds a separate opt-in LAN executable and
- * launcher. The default executable remains localhost-only.
+ * Builds the standard release, then adds a separate opt-in secure LAN
+ * executable, certificate setup script, launcher, and documentation.
+ * The default executable remains localhost-only.
  */
 
 const { execFileSync, execSync } = require('child_process');
@@ -33,8 +34,16 @@ function buildLanExecutable() {
     fs.existsSync(icon) ? `--icon "${icon}"` : ''
   ].filter(Boolean).join(' ');
 
-  log('Compiling LAN launcher -> ASAdventurerLAN.exe ...');
+  log('Compiling secure LAN launcher -> ASAdventurerLAN.exe ...');
   execSync(command, { stdio: 'inherit', cwd: ROOT });
+}
+
+function copyLanSupportFiles() {
+  const setupScript = path.join(ROOT, 'setup-lan-certificate.ps1');
+  if (!fs.existsSync(setupScript)) {
+    throw new Error('setup-lan-certificate.ps1 is missing');
+  }
+  fs.copyFileSync(setupScript, path.join(RELEASE, 'setup-lan-certificate.ps1'));
 }
 
 function writeLanLauncher() {
@@ -42,13 +51,16 @@ function writeLanLauncher() {
 `@echo off
 echo.
 echo  ============================================
-echo   AS Adventurer - LAN Mode
+echo   AS Adventurer - Secure LAN Mode
 echo  ============================================
 echo.
 echo  This mode is visible to other devices on your
 echo  trusted home/private network.
 echo.
-echo  Use one of the network URLs printed below.
+echo  On first launch, Windows creates a local HTTPS
+echo  certificate so remote camera and microphone access works.
+echo.
+echo  Use one of the HTTPS URLs printed below.
 echo  Press Ctrl+C to stop the server.
 echo.
 cd /d "%~dp0"
@@ -67,7 +79,7 @@ function addLanDocumentation() {
   const marker = '## Running on another computer';
   let readme = fs.readFileSync(readmePath, 'utf8');
   if (!readme.includes(marker)) {
-    readme += `\n\n${marker}\n\nFor a second computer on the same trusted private network, double-click\n\`Start AS Adventurer LAN.bat\`. The console prints the Control Panel and OBS\nOverlay URLs to use on the other computer. See \`LAN_SETUP.md\` for firewall,\nsecurity, and browser camera/microphone notes.\n`;
+    readme += `\n\n${marker}\n\nFor a second computer on the same trusted private network, double-click\n\`Start AS Adventurer LAN.bat\`. The first launch creates a private HTTPS\ncertificate. Copy the generated \`lan-cert\` folder to the second computer and\nrun its certificate installer once; then use the HTTPS Control Panel or OBS\nOverlay URL printed by the launcher. See \`LAN_SETUP.md\` for full steps.\n`;
     fs.writeFileSync(readmePath, readme);
   }
 }
@@ -112,16 +124,17 @@ async function main() {
   });
 
   buildLanExecutable();
+  copyLanSupportFiles();
   writeLanLauncher();
   addLanDocumentation();
   writeLanChecksum();
 
-  log('Rebuilding release ZIP with LAN files...');
+  log('Rebuilding release ZIP with secure LAN files...');
   await createZip();
   const zipMB = (fs.statSync(ZIP_PATH).size / 1024 / 1024).toFixed(1);
 
   console.log('');
-  log('LAN-enabled release complete.');
+  log('Secure LAN-enabled release complete.');
   log(`Archive: release/ASAdventurer.zip (${zipMB} MB)`);
   log('Default launcher remains localhost-only.');
   console.log('');
