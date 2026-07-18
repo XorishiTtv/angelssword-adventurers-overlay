@@ -8,38 +8,79 @@
   const routedMedia = new Set();
   const routedContexts = new Set();
   let outputDeviceId = '';
+  let outputDeviceLabel = '';
+  let matchedLocalDeviceId = null;
   let configSocket = null;
 
-  async function applyMediaSink(element) {
-    if (typeof element.setSinkId !== 'function') return;
+  async function findLocalOutputByLabel() {
+    if (!outputDeviceLabel || !navigator.mediaDevices?.enumerateDevices) return '';
     try {
-      await element.setSinkId(outputDeviceId || '');
-    } catch (error) {
-      console.warn('[audio-output] Could not route media output:', error.message);
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const match = devices.find(device =>
+        device.kind === 'audiooutput' && device.label === outputDeviceLabel
+      );
+      return match?.deviceId || '';
+    } catch {
+      return '';
     }
   }
 
-  async function applyContextSink(record) {
-    if (record.mode === 'native' && typeof record.context.setSinkId === 'function') {
+  async function sinkCandidates() {
+    if (!outputDeviceId && !outputDeviceLabel) return [''];
+
+    const candidates = [];
+    if (matchedLocalDeviceId !== null) candidates.push(matchedLocalDeviceId);
+    if (outputDeviceId) candidates.push(outputDeviceId);
+
+    const localMatch = await findLocalOutputByLabel();
+    if (localMatch) candidates.push(localMatch);
+    candidates.push('');
+    return [...new Set(candidates)];
+  }
+
+  async function setSink(target, methodName) {
+    if (typeof target?.[methodName] !== 'function') return;
+
+    let lastError = null;
+    for (const candidate of await sinkCandidates()) {
       try {
-        await record.context.setSinkId(outputDeviceId || '');
+        await target[methodName](candidate);
+        matchedLocalDeviceId = candidate;
+        return;
       } catch (error) {
-        console.warn('[audio-output] Could not route Web Audio output:', error.message);
+        lastError = error;
       }
+    }
+
+    if (lastError) {
+      console.warn('[audio-output] Could not route audio output:', lastError.message);
+    }
+  }
+
+  async function applyMediaSink(element) {
+    await setSink(element, 'setSinkId');
+  }
+
+  async function applyContextSink(record) {
+    if (record.mode === 'native') {
+      await setSink(record.context, 'setSinkId');
       return;
     }
 
     if (record.mediaElement) {
       await applyMediaSink(record.mediaElement);
-      nativeMediaPlay.call(record.mediaElement).catch(() => {});
+      const playResult = nativeMediaPlay.call(record.mediaElement);
+      if (playResult?.catch) playResult.catch(() => {});
     }
   }
 
-  function setOutputDevice(deviceId) {
+  function setOutputDevice(deviceId, deviceLabel) {
     outputDeviceId = typeof deviceId === 'string' ? deviceId : '';
+    outputDeviceLabel = typeof deviceLabel === 'string' ? deviceLabel : '';
+    matchedLocalDeviceId = null;
     routedMedia.forEach(element => applyMediaSink(element));
     routedContexts.forEach(record => applyContextSink(record));
-    console.log(`[audio-output] Routed to ${outputDeviceId || 'system default'}`);
+    console.log(`[audio-output] Requested ${outputDeviceLabel || outputDeviceId || 'system default'}`);
   }
 
   if (typeof NativeAudio === 'function') {
@@ -74,10 +115,17 @@
         applyContextSink(record);
 
         const originalClose = context.close.bind(context);
-        context.close = async () => {
-          routedContexts.delete(record);
-          return originalClose();
-        };
+        try {
+          Object.defineProperty(context, 'close', {
+            configurable: true,
+            value: async () => {
+              routedContexts.delete(record);
+              return originalClose();
+            }
+          });
+        } catch {
+          // The context will be removed when the page unloads.
+        }
         return context;
       }
 
@@ -102,7 +150,7 @@
       routedContexts.add(record);
       applyContextSink(record);
 
-      const proxy = new Proxy(context, {
+      return new Proxy(context, {
         get(target, property) {
           if (property === 'destination') return streamDestination;
           if (property === 'close') {
@@ -119,8 +167,6 @@
           return typeof value === 'function' ? value.bind(target) : value;
         }
       });
-
-      return proxy;
     }
 
     RoutedAudioContext.prototype = NativeAudioContext.prototype;
@@ -138,7 +184,7 @@
         const message = JSON.parse(event.data);
         if (message.type === 'config'
           && Object.prototype.hasOwnProperty.call(message, 'audioOutputDeviceId')) {
-          setOutputDevice(message.audioOutputDeviceId);
+          setOutputDevice(message.audioOutputDeviceId, message.audioOutputDeviceLabel);
         }
       } catch {
         // Ignore malformed messages.

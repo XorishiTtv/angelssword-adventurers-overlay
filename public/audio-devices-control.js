@@ -70,7 +70,10 @@
     if (!deviceSocket || deviceSocket.readyState !== WebSocket.OPEN) return;
     deviceSocket.send(JSON.stringify({
       type: 'config',
-      audioOutputDeviceId: outputSelect.value || ''
+      audioOutputDeviceId: outputSelect.value || '',
+      audioOutputDeviceLabel: outputSelect.value
+        ? (outputSelect.options[outputSelect.selectedIndex]?.textContent || '')
+        : ''
     }));
   }
 
@@ -108,7 +111,7 @@
     return selected?.deviceId || '';
   }
 
-  function replaceOutputOptions(outputs, preferredId) {
+  function replaceOutputOptions(outputs, preferredId, preferredLabel) {
     outputSelect.innerHTML = '<option value="">System default</option>';
 
     outputs
@@ -120,21 +123,23 @@
         outputSelect.appendChild(option);
       });
 
-    const savedStillExists = outputs.some(device => device.deviceId === preferredId);
-    outputSelect.value = savedStillExists ? preferredId : '';
-    return outputSelect.value;
+    const selected = outputs.find(device => device.deviceId === preferredId)
+      || outputs.find(device => preferredLabel && device.label === preferredLabel)
+      || null;
+    outputSelect.value = selected && selected.deviceId !== 'default' ? selected.deviceId : '';
+    return {
+      id: outputSelect.value,
+      label: outputSelect.value
+        ? (outputSelect.options[outputSelect.selectedIndex]?.textContent || selected?.label || '')
+        : ''
+    };
   }
 
   async function requestAudioPermission() {
     if (permissionRequested || !navigator.mediaDevices.getUserMedia) return;
     permissionRequested = true;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      stream.getTracks().forEach(track => track.stop());
-    } catch (error) {
-      permissionRequested = false;
-      throw error;
-    }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    stream.getTracks().forEach(track => track.stop());
   }
 
   async function refreshDevices({ requestPermission = false } = {}) {
@@ -158,9 +163,17 @@
         const inputs = devices.filter(device => device.kind === 'audioinput');
         const outputs = devices.filter(device => device.kind === 'audiooutput');
         const micDeviceId = replaceMicOptions(inputs, micSelect.value || settings.micDeviceId || '');
-        const audioOutputDeviceId = replaceOutputOptions(outputs, settings.audioOutputDeviceId || '');
+        const outputSelection = replaceOutputOptions(
+          outputs,
+          settings.audioOutputDeviceId || '',
+          settings.audioOutputDeviceLabel || ''
+        );
 
-        saveSettings({ micDeviceId, audioOutputDeviceId });
+        saveSettings({
+          micDeviceId,
+          audioOutputDeviceId: outputSelection.id,
+          audioOutputDeviceLabel: outputSelection.label
+        });
         sendOutputConfig();
 
         if (!supportsOutputSelection) {
@@ -193,7 +206,7 @@
 
     stopMicButton.click();
     await new Promise(resolve => setTimeout(resolve, 100));
-    startMicButton.click();
+    startMicButtton.click();
   }
 
   micSelect.addEventListener('change', async () => {
@@ -202,7 +215,12 @@
   });
 
   outputSelect.addEventListener('change', () => {
-    saveSettings({ audioOutputDeviceId: outputSelect.value || '' });
+    saveSettings({
+      audioOutputDeviceId: outputSelect.value || '',
+      audioOutputDeviceLabel: outputSelect.value
+        ? (outputSelect.options[outputSelect.selectedIndex]?.textContent || '')
+        : ''
+    });
     sendOutputConfig();
   });
 
