@@ -1,4 +1,4 @@
-// AS Adventurer — speaking detection and audio output controls
+// AS Adventurer — microphone input and SFX output controls
 (() => {
   'use strict';
 
@@ -23,43 +23,34 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   }
 
+  function removeSetting(key) {
+    const settings = loadSettings();
+    if (!Object.prototype.hasOwnProperty.call(settings, key)) return;
+    delete settings[key];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  }
+
   const card = micSelect.closest('.card');
   const cardBody = micSelect.closest('.card-body');
   const micRow = micSelect.closest('.input-row');
   const cardHeading = card?.querySelector('.card-header h2');
   const originalHelp = cardBody?.querySelector('.help-text');
 
-  if (cardHeading) cardHeading.textContent = '🎤 Speaking Detection';
+  if (cardHeading) cardHeading.textContent = '🎧 Audio Devices';
   if (originalHelp) {
-    originalHelp.textContent = 'Choose whether speaking detection listens to a microphone input or audio shared from a system, window, or browser tab. Detection still runs in this control panel and is sent to the OBS overlay.';
+    originalHelp.textContent = 'Choose the microphone used for speaking detection and the playback device used for emote sound effects.';
   }
-
-  const sourceGroup = document.createElement('div');
-  sourceGroup.className = 'input-group';
-  sourceGroup.id = 'speaking-source-group';
-  sourceGroup.innerHTML = `
-    <label for="speaking-source-select">Detection Source</label>
-    <div class="input-row">
-      <select id="speaking-source-select" class="mic-dropdown">
-        <option value="input">Microphone input</option>
-        <option value="output">System / app output audio</option>
-      </select>
-    </div>
-    <div class="help-text" id="speaking-source-status" style="margin-top:6px;"></div>
-  `;
 
   const inputGroup = document.createElement('div');
   inputGroup.className = 'input-group';
   inputGroup.id = 'speaking-input-device-group';
-  inputGroup.innerHTML = '<label for="mic-select">Input Device</label>';
+  inputGroup.innerHTML = '<label for="mic-select">Speaking Detection Input</label>';
 
   if (micRow?.parentElement) {
     const parent = micRow.parentElement;
-    parent.insertBefore(sourceGroup, micRow);
     parent.insertBefore(inputGroup, micRow);
     inputGroup.appendChild(micRow);
   } else {
-    cardBody?.appendChild(sourceGroup);
     cardBody?.appendChild(inputGroup);
     inputGroup.appendChild(micSelect);
   }
@@ -80,58 +71,19 @@
   `;
   inputGroup.insertAdjacentElement('afterend', outputGroup);
 
-  const sourceSelect = document.getElementById('speaking-source-select');
-  const sourceStatus = document.getElementById('speaking-source-status');
   const outputSelect = document.getElementById('audio-output-select');
   const refreshButton = document.getElementById('btn-refresh-audio-devices');
   const outputStatus = document.getElementById('audio-output-device-status');
-  const micState = document.getElementById('mic-state');
-  const supportsOutputCapture = Boolean(window.ASAdventurerSpeakingCapture?.supportsOutputCapture);
   const supportsOutputSelection = typeof HTMLMediaElement !== 'undefined'
     && typeof HTMLMediaElement.prototype.setSinkId === 'function';
-
-  const outputSourceOption = sourceSelect.querySelector('option[value="output"]');
-  if (outputSourceOption) outputSourceOption.disabled = !supportsOutputCapture;
 
   let deviceSocket = null;
   let refreshPromise = null;
   let refreshTimer = null;
   let permissionRequested = false;
 
-  function currentSource() {
-    return sourceSelect.value === 'output' ? 'output' : 'input';
-  }
-
   function detectionIsActive() {
     return Boolean(stopMicButton && stopMicButton.style.display !== 'none');
-  }
-
-  function updateStartButtonLabel() {
-    if (!startMicButton || detectionIsActive()) return;
-    startMicButton.textContent = currentSource() === 'output'
-      ? 'Share Output Audio'
-      : 'Enable Microphone';
-  }
-
-  function updateSourceUI() {
-    const outputMode = currentSource() === 'output';
-    inputGroup.style.display = outputMode ? 'none' : '';
-
-    if (outputMode && !supportsOutputCapture) {
-      sourceStatus.textContent = 'Output capture is not supported by this browser. Select microphone input.';
-      sourceStatus.style.color = '#f87171';
-      startMicButton.disabled = true;
-    } else if (outputMode) {
-      sourceStatus.textContent = 'When enabled, choose a tab, window, or screen and turn on “Share audio”. Browsers require you to approve the source each time.';
-      sourceStatus.style.color = '';
-      startMicButton.disabled = false;
-    } else {
-      sourceStatus.textContent = 'Speaking and typing detection will use the selected microphone input.';
-      sourceStatus.style.color = '';
-      startMicButton.disabled = false;
-    }
-
-    updateStartButtonLabel();
   }
 
   function setOutputStatus(message, isError = false) {
@@ -200,6 +152,7 @@
       || outputs.find(device => preferredLabel && device.label === preferredLabel)
       || null;
     outputSelect.value = selected && selected.deviceId !== 'default' ? selected.deviceId : '';
+
     return {
       id: outputSelect.value,
       label: outputSelect.value
@@ -254,8 +207,8 @@
         });
         sendOutputConfig();
 
+        outputSelect.disabled = !supportsOutputSelection;
         if (!supportsOutputSelection) {
-          outputSelect.disabled = true;
           setOutputStatus('SFX output selection is not supported by this browser/OBS build. SFX will use the default output.');
         } else if (!outputs.length) {
           setOutputStatus('No playback outputs are exposed. SFX will use the system default.');
@@ -278,21 +231,16 @@
     return refreshPromise;
   }
 
-  function restartActiveDetection() {
+  async function restartActiveMicrophone() {
     if (!detectionIsActive() || !startMicButton || !stopMicButton) return;
     stopMicButton.click();
+    await new Promise(resolve => setTimeout(resolve, 100));
     startMicButton.click();
   }
 
-  sourceSelect.addEventListener('change', () => {
-    saveSettings({ speakingDetectionSource: currentSource() });
-    updateSourceUI();
-    restartActiveDetection();
-  });
-
-  micSelect.addEventListener('change', () => {
+  micSelect.addEventListener('change', async () => {
     saveSettings({ micDeviceId: micSelect.value });
-    if (currentSource() === 'input') restartActiveDetection();
+    await restartActiveMicrophone();
   });
 
   outputSelect.addEventListener('change', () => {
@@ -305,38 +253,6 @@
     sendOutputConfig();
   });
 
-  startMicButton?.addEventListener('click', () => {
-    if (currentSource() === 'output') {
-      sourceStatus.textContent = 'Choose the audio source in the browser share dialog and make sure “Share audio” is enabled.';
-    }
-  });
-
-  stopMicButton?.addEventListener('click', () => {
-    setTimeout(() => {
-      if (micState) micState.textContent = 'Not started';
-      updateStartButtonLabel();
-    }, 0);
-  });
-
-  window.addEventListener('as-speaking-source-started', event => {
-    if (event.detail?.source !== 'output') return;
-    setTimeout(() => {
-      if (micState) {
-        micState.textContent = event.detail.label || 'Shared output audio';
-        micState.style.color = '#4ade80';
-      }
-      sourceStatus.textContent = 'Listening to shared output audio.';
-      sourceStatus.style.color = '';
-    }, 0);
-  });
-
-  window.addEventListener('as-speaking-source-ended', event => {
-    if (event.detail?.source !== 'output' || currentSource() !== 'output') return;
-    if (detectionIsActive()) stopMicButton?.click();
-    sourceStatus.textContent = 'Output sharing ended. Click “Share Output Audio” to start again.';
-    sourceStatus.style.color = '#e8a33a';
-  });
-
   refreshButton.addEventListener('click', () => refreshDevices({ requestPermission: true }));
   outputSelect.addEventListener('pointerdown', () => refreshDevices({ requestPermission: true }), { once: true });
 
@@ -345,10 +261,7 @@
     refreshTimer = setTimeout(() => refreshDevices(), 250);
   });
 
-  const savedSource = loadSettings().speakingDetectionSource;
-  sourceSelect.value = savedSource === 'output' && supportsOutputCapture ? 'output' : 'input';
-  saveSettings({ speakingDetectionSource: sourceSelect.value });
-  updateSourceUI();
+  removeSetting('speakingDetectionSource');
   connectDeviceSocket();
   refreshDevices();
   setTimeout(() => refreshDevices(), 1000);
