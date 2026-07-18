@@ -41,11 +41,14 @@ if "%HAS_ASSETS%"=="0" (
 
 echo.
 echo  ============================================
-echo   AS Adventurer - LAN Mode
+echo   AS Adventurer - Secure LAN Mode
 echo  ============================================
 echo.
 echo  This mode is visible to other devices on your
 echo  trusted home/private network.
+echo.
+echo  On first launch, Windows creates a local HTTPS
+echo  certificate so remote camera and microphone access works.
 echo.
 
 cd /d "%~dp0"
