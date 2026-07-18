@@ -2,6 +2,7 @@ node_modules/
 dist/
 release/
 runtime/
+lan-cert/
 
 # Assets (users bring their own)
 public/assets/*.gif
