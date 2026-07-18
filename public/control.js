@@ -12,8 +12,7 @@
     });
   }
 
-  loadScript('speaking-source-capture.js')
-    .then(() => loadScript('control-core.js'))
+  loadScript('control-core.js')
     .then(() => loadScript('audio-devices-control.js'))
     .catch(error => console.error('[audio-devices] Bootstrap failed:', error));
 })();
