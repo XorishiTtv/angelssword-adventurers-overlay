@@ -7,8 +7,6 @@
   if (location.pathname.endsWith('/overlay.html') || !window.fetch) return;
 
   const authenticatedFetch = window.fetch.bind(window);
-  let recentAssetChange = false;
-  let reloadTimer = null;
   let emoteRecovery = null;
 
   function requestPath(input) {
@@ -22,11 +20,6 @@
 
   function requestMethod(input, init) {
     return String(init?.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
-  }
-
-  function scheduleReload(delay = 150) {
-    clearTimeout(reloadTimer);
-    reloadTimer = setTimeout(() => location.reload(), delay);
   }
 
   async function recoverEmotes(originalResponse) {
@@ -71,26 +64,10 @@
       return recoverEmotes(response);
     }
 
-    if (response.ok && path === '/api/models/select' && method === 'POST') {
-      // control.js does not expose its private loadEmotes() function. Reloading
-      // after a model switch rebuilds the emote buttons for the selected model.
-      scheduleReload();
-      return response;
-    }
-
-    if (response.ok && path === '/api/machine/assets' && (method === 'PUT' || method === 'DELETE')) {
-      recentAssetChange = true;
-      return response;
-    }
-
-    if (response.ok && path === '/api/machine/files' && method === 'GET' && recentAssetChange) {
-      recentAssetChange = false;
-      // machine-client requests this endpoint after the complete upload/delete
-      // operation, so this is a safe point to refresh models and emote buttons.
-      scheduleReload(250);
-      return response;
-    }
-
+    // Do not reload the control page after model selection or asset changes.
+    // control.js already receives the machine-scoped model_change WebSocket event
+    // and refreshes its emote list. Keeping this page alive preserves active
+    // webcam MediaStreams, microphone tracks, AudioContext, and worker timers.
     return response;
   };
 })();
