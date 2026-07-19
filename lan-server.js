@@ -26,6 +26,18 @@ const CERT_DIR = path.join(APP_DIR, 'lan-cert');
 const DEFAULT_PFX_PATH = path.join(CERT_DIR, 'ASAdventurer-LAN-Server.pfx');
 const DEFAULT_PASSWORD_PATH = path.join(CERT_DIR, 'ASAdventurer-LAN-Server.password.txt');
 const SETUP_SCRIPT_PATH = path.join(APP_DIR, 'setup-lan-certificate.ps1');
+const MACHINE_REGISTRY_PATH = path.resolve(APP_DIR, 'machine-data', 'registry.json');
+
+// Windows does not consistently allow renameSync() to replace an existing
+// destination. machine-mode writes the registry through a temporary file, so
+// remove only that known destination immediately before its atomic rename.
+const nativeRenameSync = fs.renameSync;
+fs.renameSync = function windowsCompatibleRegistryRename(source, destination) {
+  if (path.resolve(destination) === MACHINE_REGISTRY_PATH) {
+    fs.rmSync(destination, { force: true });
+  }
+  return nativeRenameSync(source, destination);
+};
 
 process.env.AS_ADVENTURER_LAN = '1';
 process.env.AS_ADVENTURER_MACHINE_AUTH = '1';
