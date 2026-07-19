@@ -30,15 +30,6 @@ if not exist "node_modules" (
     echo.
 )
 
-:: Generate placeholders if no assets
-set "HAS_ASSETS=0"
-for %%f in (public\assets\neutral_idle.*) do set "HAS_ASSETS=1"
-if "%HAS_ASSETS%"=="0" (
-    echo  Generating placeholder assets...
-    "%NODE%" generate-placeholders.js
-    echo.
-)
-
 echo.
 echo  ============================================
 echo   AS Adventurer - Secure LAN Mode
@@ -49,6 +40,11 @@ echo  trusted home/private network.
 echo.
 echo  On first launch, Windows creates a local HTTPS
 echo  certificate so remote camera and microphone access works.
+echo.
+echo  Each LAN computer registers a private machine token.
+echo  Its uploaded assets are stored separately under machine-data.
+echo.
+echo  Press Ctrl+C to stop the server.
 echo.
 
 cd /d "%~dp0"
