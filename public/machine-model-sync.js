@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  // This script is loaded before control.js / overlay.js. In normal localhost
-  // mode there is no machine token, so it intentionally does nothing.
+  // Loaded before control.js / overlay.js. Normal localhost mode has no machine
+  // token, so this compatibility layer remains inactive there.
   const TOKEN_KEY = 'as-adventurer-machine-token';
   const hash = new URLSearchParams(location.hash.replace(/^#/, ''));
   const machineToken = window.ASMachine?.token
@@ -13,12 +13,8 @@
   if (!machineToken || !window.fetch) return;
 
   // machine-client.js has already wrapped fetch with machine authentication.
-  // Keep that authenticated implementation as our non-recursive transport.
   const authenticatedFetch = window.fetch.bind(window);
-  const isOverlay = location.pathname.endsWith('/overlay.html');
   let synchronization = null;
-  let uploadTimer = null;
-  let lastOverlayFileCount = null;
 
   function requestPath(input) {
     try {
@@ -41,7 +37,7 @@
     }
   }
 
-  async function synchronizeActiveModel({ broadcast = true } = {}) {
+  async function resolveActiveModel() {
     if (synchronization) return synchronization;
 
     synchronization = (async () => {
@@ -53,19 +49,7 @@
       if (!models.length) return null;
 
       const activeExists = models.some(model => model.name === data.active);
-      const modelName = activeExists ? data.active : models[0].name;
-      if (!modelName) return null;
-
-      if (broadcast) {
-        const selectionResponse = await authenticatedFetch('/api/models/select', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: modelName })
-        });
-        if (!selectionResponse.ok) return null;
-      }
-
-      return modelName;
+      return activeExists ? data.active : models[0].name;
     })().finally(() => {
       synchronization = null;
     });
@@ -73,47 +57,10 @@
     return synchronization;
   }
 
-  function scheduleUploadSynchronization() {
-    clearTimeout(uploadTimer);
-    uploadTimer = setTimeout(() => {
-      synchronizeActiveModel({ broadcast: true }).catch(error => {
-        console.warn('[machine] Could not refresh the uploaded model:', error);
-      });
-    }, 1000);
-  }
-
-  async function checkOverlayAssets() {
-    if (!isOverlay) return;
-
-    try {
-      const response = await authenticatedFetch('/api/machine/status');
-      if (!response.ok) return;
-      const status = await response.json().catch(() => ({}));
-      const fileCount = Number(status.fileCount || 0);
-
-      if (lastOverlayFileCount === null) {
-        lastOverlayFileCount = fileCount;
-        return;
-      }
-
-      if (fileCount !== lastOverlayFileCount) {
-        lastOverlayFileCount = fileCount;
-        await synchronizeActiveModel({ broadcast: true });
-      }
-    } catch (error) {
-      console.warn('[machine] Could not check for overlay asset changes:', error);
-    }
-  }
-
   window.fetch = async function machineModelFetch(input, init) {
     const path = requestPath(input);
     const method = requestMethod(input, init);
     const response = await authenticatedFetch(input, init);
-
-    if (path === '/api/machine/assets' && response.ok && (method === 'PUT' || method === 'DELETE')) {
-      scheduleUploadSynchronization();
-      return response;
-    }
 
     if (path !== '/api/assets' || method !== 'GET' || !response.ok) return response;
 
@@ -122,11 +69,10 @@
       return response;
     }
 
-    // A newly registered machine begins at "Default". Folder uploads create a
-    // named model, so the first overlay request can legitimately receive an
-    // empty asset map. Resolve and select the first valid machine model, then
-    // retry this request with that explicit model name.
-    const modelName = await synchronizeActiveModel({ broadcast: true });
+    // The server manifest resolves stale registrations and emits model_change
+    // after asset changes. This retry only covers an overlay request that named a
+    // no-longer-valid model or raced the first manifest build.
+    const modelName = await resolveActiveModel();
     if (!modelName) return response;
 
     try {
@@ -143,24 +89,4 @@
       return response;
     }
   };
-
-  // Resolve stale registrations even when files were copied into machine-data
-  // manually instead of uploaded in the UI.
-  const initialSync = async () => {
-    try {
-      await synchronizeActiveModel({ broadcast: true });
-      if (isOverlay) {
-        await checkOverlayAssets();
-        setInterval(checkOverlayAssets, 2000);
-      }
-    } catch (error) {
-      console.warn('[machine] Could not synchronize the active model:', error);
-    }
-  };
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initialSync, { once: true });
-  } else {
-    initialSync();
-  }
 })();
