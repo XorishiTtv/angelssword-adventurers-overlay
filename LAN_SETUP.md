@@ -78,7 +78,7 @@ The **Machine Assets** card supports two upload methods:
 
 Supported upload types are `.webm`, `.webp`, `.gif`, `.png`, `.mp4`, `.mp3`, `.wav`, `.ogg`, and `.m4a`. Each file is limited to 250 MB. Uploaded files can be reviewed and deleted from the same card.
 
-The model selector refreshes automatically. Only models inside the current machine's private directory are returned in secure LAN mode.
+The server keeps a cached manifest for each registered machine. Uploads, deletions, and filesystem changes invalidate that manifest and publish an asset-change event to the machine's connected control panel and overlay. The active model and emote list refresh without polling or restarting camera and microphone capture.
 
 ## OBS setup
 
