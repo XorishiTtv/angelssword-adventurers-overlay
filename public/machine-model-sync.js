@@ -15,8 +15,10 @@
   // machine-client.js has already wrapped fetch with machine authentication.
   // Keep that authenticated implementation as our non-recursive transport.
   const authenticatedFetch = window.fetch.bind(window);
+  const isOverlay = location.pathname.endsWith('/overlay.html');
   let synchronization = null;
   let uploadTimer = null;
+  let lastOverlayFileCount = null;
 
   function requestPath(input) {
     try {
@@ -80,6 +82,29 @@
     }, 1000);
   }
 
+  async function checkOverlayAssets() {
+    if (!isOverlay) return;
+
+    try {
+      const response = await authenticatedFetch('/api/machine/status');
+      if (!response.ok) return;
+      const status = await response.json().catch(() => ({}));
+      const fileCount = Number(status.fileCount || 0);
+
+      if (lastOverlayFileCount === null) {
+        lastOverlayFileCount = fileCount;
+        return;
+      }
+
+      if (fileCount !== lastOverlayFileCount) {
+        lastOverlayFileCount = fileCount;
+        await synchronizeActiveModel({ broadcast: true });
+      }
+    } catch (error) {
+      console.warn('[machine] Could not check for overlay asset changes:', error);
+    }
+  }
+
   window.fetch = async function machineModelFetch(input, init) {
     const path = requestPath(input);
     const method = requestMethod(input, init);
@@ -119,11 +144,19 @@
     }
   };
 
-  // Resolve stale registrations even when the control panel is opened after
-  // files were copied into machine-data manually instead of uploaded in the UI.
-  const initialSync = () => synchronizeActiveModel({ broadcast: true }).catch(error => {
-    console.warn('[machine] Could not synchronize the active model:', error);
-  });
+  // Resolve stale registrations even when files were copied into machine-data
+  // manually instead of uploaded in the UI.
+  const initialSync = async () => {
+    try {
+      await synchronizeActiveModel({ broadcast: true });
+      if (isOverlay) {
+        await checkOverlayAssets();
+        setInterval(checkOverlayAssets, 2000);
+      }
+    } catch (error) {
+      console.warn('[machine] Could not synchronize the active model:', error);
+    }
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initialSync, { once: true });
