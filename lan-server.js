@@ -6,8 +6,8 @@
  * The standard server remains localhost-only. This launcher:
  *   - binds the existing server to 0.0.0.0;
  *   - serves it over HTTPS when a LAN certificate is available;
- *   - permits same-origin WebSockets from private LAN hosts;
- *   - injects a tiny browser bootstrap so existing ws:// clients use wss://.
+ *   - requires a registered machine token for LAN APIs and WebSockets;
+ *   - isolates each machine's models, emotes, uploads, and overlay messages.
  */
 
 const { execFileSync } = require('child_process');
@@ -19,6 +19,7 @@ const os = require('os');
 const path = require('path');
 const express = require('express');
 const { WebSocketServer } = require('ws');
+const { installMachineMode } = require('./machine-mode');
 
 const APP_DIR = process.pkg ? path.dirname(process.execPath) : __dirname;
 const CERT_DIR = path.join(APP_DIR, 'lan-cert');
@@ -27,6 +28,7 @@ const DEFAULT_PASSWORD_PATH = path.join(CERT_DIR, 'ASAdventurer-LAN-Server.passw
 const SETUP_SCRIPT_PATH = path.join(APP_DIR, 'setup-lan-certificate.ps1');
 
 process.env.AS_ADVENTURER_LAN = '1';
+process.env.AS_ADVENTURER_MACHINE_AUTH = '1';
 
 function isLoopbackHost(host) {
   return host === '127.0.0.1' || host === 'localhost' || host === '::1';
@@ -102,59 +104,7 @@ function loadTlsOptions() {
 
 const tlsOptions = loadTlsOptions();
 const lanProtocol = tlsOptions ? 'https' : 'http';
-
-const LAN_BROWSER_BOOTSTRAP = `<script data-as-adventurer-lan-bootstrap>
-(() => {
-  'use strict';
-
-  if (location.protocol === 'https:' && window.WebSocket) {
-    const NativeWebSocket = window.WebSocket;
-    const rewrite = value => {
-      const url = String(value);
-      return url.startsWith('ws://') ? 'wss://' + url.slice(5) : url;
-    };
-    function SecureWebSocket(url, protocols) {
-      return protocols === undefined
-        ? new NativeWebSocket(rewrite(url))
-        : new NativeWebSocket(rewrite(url), protocols);
-    }
-    SecureWebSocket.prototype = NativeWebSocket.prototype;
-    for (const key of ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED']) {
-      Object.defineProperty(SecureWebSocket, key, { value: NativeWebSocket[key] });
-    }
-    window.WebSocket = SecureWebSocket;
-  }
-
-  if (!window.isSecureContext || !navigator.mediaDevices) {
-    const message = 'Camera and microphone require the HTTPS LAN address. Trust the AS Adventurer LAN certificate on this computer, then reopen the https:// address.';
-
-    document.addEventListener('click', event => {
-      const target = event.target && event.target.closest
-        ? event.target.closest('#btn-start-webcam, #btn-start-mic, #mic-select')
-        : null;
-      if (!target) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-
-      if (target.id === 'btn-start-webcam') {
-        target.textContent = message;
-      } else {
-        const micButton = document.getElementById('btn-start-mic');
-        const micSelect = document.getElementById('mic-select');
-        if (micButton) micButton.textContent = message;
-        if (micSelect) micSelect.innerHTML = '<option>HTTPS certificate required</option>';
-      }
-    }, true);
-
-    window.addEventListener('DOMContentLoaded', () => {
-      const micSelect = document.getElementById('mic-select');
-      if (micSelect) micSelect.innerHTML = '<option>HTTPS certificate required</option>';
-    });
-  }
-})();
-</script>`;
+const LAN_BROWSER_BOOTSTRAP = '<script src="/machine-client.js" data-as-adventurer-lan-bootstrap></script>';
 
 function injectLanBootstrap(html) {
   if (html.includes('data-as-adventurer-lan-bootstrap')) return html;
@@ -162,8 +112,8 @@ function injectLanBootstrap(html) {
   return `${LAN_BROWSER_BOOTSTRAP}\n${html}`;
 }
 
-// Intercept only the two HTML entry points in LAN mode. All assets and API
-// requests continue through the original Express static middleware.
+// Intercept only the two HTML entry points in LAN mode. All other static files
+// continue through the original Express middleware.
 const originalExpressStatic = express.static;
 express.static = function patchedExpressStatic(root, options) {
   const staticMiddleware = originalExpressStatic(root, options);
@@ -192,6 +142,14 @@ express.static = function patchedExpressStatic(root, options) {
   };
 };
 
+// Replace the Express factory used by server.js so machine routes are installed
+// before the original public static middleware and API routes.
+const machineMode = installMachineMode({
+  expressModule: express,
+  WebSocketServer,
+  appDir: APP_DIR
+});
+
 let lanBannerPrinted = false;
 function printLanBanner(server) {
   if (lanBannerPrinted) return;
@@ -206,7 +164,8 @@ function printLanBanner(server) {
 
   console.log('');
   console.log(`  SECURE LAN MODE ${tlsOptions ? 'ENABLED' : 'STARTED WITHOUT HTTPS'}`);
-  console.log('  Anyone on this trusted local network can control the overlay.');
+  console.log('  Each LAN computer must register a machine token.');
+  console.log(`  Registered machines: ${machineMode.getMachineCount()}`);
   console.log('');
 
   if (tlsOptions) {
@@ -226,12 +185,13 @@ function printLanBanner(server) {
   }
 
   if (tlsOptions) {
-    console.log('  To use camera or microphone on another computer, copy the lan-cert');
-    console.log('  folder to that computer and run "Install Certificate on this PC.bat" once.');
+    console.log('  On each new computer, install the LAN certificate first, then open');
+    console.log('  the Control Panel and create that computer\'s machine registration.');
   } else {
     console.log('  WARNING: camera and microphone are unavailable over plain HTTP.');
     console.log('  On Windows, run start-lan.bat so the HTTPS certificate is generated.');
   }
+  console.log('  Machine assets and tokens are stored under machine-data/.');
   console.log('  Allow the app through Windows Firewall for Private networks only.');
   console.log('  Press Ctrl+C to stop.');
   console.log('');
@@ -272,13 +232,21 @@ http.createServer = function patchedCreateServer(...args) {
   return patchListen(server);
 };
 
-// Permit only same-origin browser WebSockets from a private LAN host. The
-// existing localhost-only guard in server.js still performs the final check.
+// Permit only authenticated, same-origin browser WebSockets from a private LAN
+// host. The existing localhost-only guard in server.js still performs the final
+// origin check after the origin is normalized.
 const originalWsOn = WebSocketServer.prototype.on;
 WebSocketServer.prototype.on = function patchedWebSocketOn(event, listener) {
   if (event !== 'connection') return originalWsOn.call(this, event, listener);
 
   return originalWsOn.call(this, event, function lanConnection(socket, request) {
+    const machine = machineMode.authenticateWebSocket(request);
+    if (!machine) {
+      socket.close(1008, 'machine token required');
+      return;
+    }
+    machineMode.attachSocket(socket, machine);
+
     const origin = request && request.headers && request.headers.origin;
     const requestHost = request && request.headers && request.headers.host;
 
@@ -293,7 +261,8 @@ WebSocketServer.prototype.on = function patchedWebSocketOn(event, listener) {
           request.headers.origin = `http://localhost${port ? `:${port}` : ''}`;
         }
       } catch {
-        // Leave malformed origins untouched so server.js rejects them.
+        socket.close(1008, 'origin not allowed');
+        return;
       }
     }
 
@@ -302,7 +271,7 @@ WebSocketServer.prototype.on = function patchedWebSocketOn(event, listener) {
 };
 
 console.log('');
-console.log('  Starting AS Adventurer in opt-in secure LAN mode...');
+console.log('  Starting AS Adventurer in secure, machine-scoped LAN mode...');
 console.log('  Use only on a trusted home/private network.');
 
 require('./server.js');
