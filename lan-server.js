@@ -116,7 +116,11 @@ function loadTlsOptions() {
 
 const tlsOptions = loadTlsOptions();
 const lanProtocol = tlsOptions ? 'https' : 'http';
-const LAN_BROWSER_BOOTSTRAP = '<script src="/machine-client.js" data-as-adventurer-lan-bootstrap></script>';
+const LAN_BROWSER_BOOTSTRAP = [
+  '<script src="/machine-client.js" data-as-adventurer-lan-bootstrap></script>',
+  '<script src="/machine-media-url-compat.js"></script>',
+  '<script src="/machine-control-emote-sync.js"></script>'
+].join('\n');
 
 function injectLanBootstrap(html) {
   if (html.includes('data-as-adventurer-lan-bootstrap')) return html;
