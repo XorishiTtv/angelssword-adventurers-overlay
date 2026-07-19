@@ -18,6 +18,8 @@ const STATE_NAMES = [
   'surprised_idle', 'surprised_speaking',
   'typing', 'eyes_closed'
 ];
+const MANIFEST_TOKEN = '__AS_MACHINE_TOKEN__';
+const ASSET_EVENT_DEBOUNCE_MS = 500;
 
 function installMachineMode({ expressModule, WebSocketServer, appDir }) {
   const DATA_DIR = path.join(appDir, 'machine-data');
@@ -30,6 +32,11 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
   let registry = loadRegistry();
   const machineClients = new Map();
   const activeEmotes = new Map();
+  const manifestCache = new Map();
+  const manifestRevisions = new Map();
+  const assetEventTimers = new Map();
+  const activeUploads = new Map();
+  const machineWatchers = new Map();
   let activeMachineContext = null;
 
   function loadRegistry() {
@@ -129,16 +136,6 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
     return `/machine-assets/${encodeURIComponent(machine.id)}/${encodeRelativePath(relativePath)}?machine_token=${encodeURIComponent(token)}`;
   }
 
-  function getModelDir(machine, modelName) {
-    const root = machineDir(machine);
-    const name = modelName || machine.activeModel || 'Default';
-    if (name === 'Default') return { directory: root, relative: '' };
-    const safeName = path.basename(String(name)).slice(0, 100);
-    const directory = path.resolve(root, safeName);
-    if (!directory.startsWith(`${path.resolve(root)}${path.sep}`)) return { directory: root, relative: '' };
-    return { directory, relative: safeName };
-  }
-
   function findExistingFile(directory, baseName, extensions) {
     for (const extension of extensions) {
       const filePath = path.join(directory, `${baseName}${extension}`);
@@ -151,10 +148,9 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
     const assets = {};
     for (const state of STATE_NAMES) {
       const fileName = findExistingFile(modelDirectory, state, ASSET_EXTENSIONS);
-      if (fileName) {
-        const relative = modelRelative ? `${modelRelative}/${fileName}` : fileName;
-        assets[state] = machineAssetUrl(machine, token, relative);
-      }
+      if (!fileName) continue;
+      const relative = modelRelative ? `${modelRelative}/${fileName}` : fileName;
+      assets[state] = machineAssetUrl(machine, token, relative);
     }
     return assets;
   }
@@ -164,11 +160,10 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
     let activeBase = null;
     for (const baseName of baseNames) {
       const found = findExistingFile(directory, baseName, extensions);
-      if (found) {
-        activeBase = baseName;
-        variants.push(makeUrl(found));
-        break;
-      }
+      if (!found) continue;
+      activeBase = baseName;
+      variants.push(makeUrl(found));
+      break;
     }
     if (!activeBase) return variants;
     for (let index = 2; index <= maxVariants; index++) {
@@ -184,11 +179,10 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
     let activeBase = null;
     for (const baseName of baseNames) {
       const found = findExistingFile(directory, baseName, extensions);
-      if (found) {
-        activeBase = baseName;
-        variants.push(makeUrl(found));
-        break;
-      }
+      if (!found) continue;
+      activeBase = baseName;
+      variants.push(makeUrl(found));
+      break;
     }
     if (!activeBase) return variants;
     const parts = activeBase.split('_');
@@ -210,7 +204,7 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
     if (!fs.existsSync(subsDir)) return [];
     const result = [];
 
-    for (const entry of fs.readdirSync(subsDir, { withFileTypes: true })) {
+    for (const entry of fs.readdirSync(subsDir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
       if (!entry.isDirectory()) continue;
       const subDir = path.join(subsDir, entry.name);
       const subRelative = parentRelative ? `${parentRelative}/subs/${entry.name}` : `subs/${entry.name}`;
@@ -263,7 +257,7 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
     if (!fs.existsSync(emotesDirectory)) return [];
     const emotes = [];
 
-    for (const entry of fs.readdirSync(emotesDirectory, { withFileTypes: true })) {
+    for (const entry of fs.readdirSync(emotesDirectory, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
       if (!entry.isDirectory()) continue;
       const emoteDir = path.join(emotesDirectory, entry.name);
       const emoteRelative = modelRelative
@@ -304,26 +298,9 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
     return emotes;
   }
 
-  function listModels(machine, token) {
-    const root = machineDir(machine);
-    fs.mkdirSync(root, { recursive: true });
-    const models = [];
-    const rootAssets = scanModelAssets(machine, token, root, '');
-    if (Object.keys(rootAssets).length) models.push({ name: 'Default', assetCount: Object.keys(rootAssets).length });
-
-    for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      const modelAssets = scanModelAssets(machine, token, path.join(root, entry.name), entry.name);
-      if (Object.keys(modelAssets).length) {
-        models.push({ name: entry.name, assetCount: Object.keys(modelAssets).length });
-      }
-    }
-    return models;
-  }
-
   function listFilesRecursive(root, current = root, output = [], depth = 0) {
     if (depth > MAX_PATH_DEPTH || !fs.existsSync(current)) return output;
-    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+    for (const entry of fs.readdirSync(current, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
       const absolute = path.join(current, entry.name);
       if (entry.isDirectory()) {
         listFilesRecursive(root, absolute, output, depth + 1);
@@ -334,6 +311,69 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
       }
     }
     return output;
+  }
+
+  function buildMachineManifest(machine) {
+    const root = machineDir(machine);
+    fs.mkdirSync(root, { recursive: true });
+    const models = [];
+    const modelData = {};
+
+    const addModel = (name, directory, relative) => {
+      const assets = scanModelAssets(machine, MANIFEST_TOKEN, directory, relative);
+      const assetCount = Object.keys(assets).length;
+      if (!assetCount) return;
+      models.push({ name, assetCount });
+      modelData[name] = {
+        assets,
+        emotes: scanEmotes(machine, MANIFEST_TOKEN, directory, relative)
+      };
+    };
+
+    addModel('Default', root, '');
+    for (const entry of fs.readdirSync(root, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      if (!entry.isDirectory()) continue;
+      addModel(entry.name, path.join(root, entry.name), entry.name);
+    }
+
+    const files = listFilesRecursive(root);
+    return {
+      revision: manifestRevisions.get(machine.id) || 0,
+      models,
+      modelData,
+      files,
+      fileCount: files.length,
+      storageBytes: files.reduce((sum, file) => sum + file.size, 0)
+    };
+  }
+
+  function getMachineManifest(machine) {
+    let manifest = manifestCache.get(machine.id);
+    if (!manifest) {
+      manifest = buildMachineManifest(machine);
+      manifestCache.set(machine.id, manifest);
+    }
+    return manifest;
+  }
+
+  function materializeToken(value, token) {
+    if (typeof value === 'string') return value.replaceAll(MANIFEST_TOKEN, encodeURIComponent(token));
+    if (Array.isArray(value)) return value.map(item => materializeToken(item, token));
+    if (!value || typeof value !== 'object') return value;
+    const result = {};
+    for (const [key, child] of Object.entries(value)) result[key] = materializeToken(child, token);
+    return result;
+  }
+
+  function ensureActiveModel(machine, manifest, persist = false) {
+    const names = new Set(manifest.models.map(model => model.name));
+    const next = names.has(machine.activeModel) ? machine.activeModel : (manifest.models[0]?.name || 'Default');
+    if (next !== machine.activeModel) {
+      machine.activeModel = next;
+      activeEmotes.delete(machine.id);
+      if (persist) saveRegistry();
+    }
+    return next;
   }
 
   function removeEmptyParents(startDir, stopDir) {
@@ -354,6 +394,64 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
       if (socket.readyState === 1 && (!targetType || socket.clientType === targetType)) {
         socket._asNativeSend(payload);
       }
+    }
+  }
+
+  function emitAssetChange(machine, reason) {
+    const manifest = getMachineManifest(machine);
+    const model = ensureActiveModel(machine, manifest, true);
+    const event = {
+      type: 'assets_changed',
+      revision: manifest.revision,
+      reason,
+      model,
+      fileCount: manifest.fileCount,
+      storageBytes: manifest.storageBytes
+    };
+    broadcastMachine(machine.id, event);
+    // Existing control and overlay clients already handle model_change in place.
+    broadcastMachine(machine.id, { type: 'model_change', model, reason: 'assets_changed', revision: manifest.revision });
+  }
+
+  function invalidateMachineManifest(machine, reason = 'changed') {
+    manifestCache.delete(machine.id);
+    manifestRevisions.set(machine.id, (manifestRevisions.get(machine.id) || 0) + 1);
+    clearTimeout(assetEventTimers.get(machine.id));
+
+    const publishWhenIdle = () => {
+      if ((activeUploads.get(machine.id) || 0) > 0) {
+        const retry = setTimeout(publishWhenIdle, ASSET_EVENT_DEBOUNCE_MS);
+        retry.unref?.();
+        assetEventTimers.set(machine.id, retry);
+        return;
+      }
+
+      assetEventTimers.delete(machine.id);
+      try {
+        emitAssetChange(machine, reason);
+      } catch (error) {
+        console.warn(`[machine] Could not publish asset change for ${machine.name}:`, error.message);
+      }
+    };
+
+    const timer = setTimeout(publishWhenIdle, ASSET_EVENT_DEBOUNCE_MS);
+    timer.unref?.();
+    assetEventTimers.set(machine.id, timer);
+  }
+
+  function ensureMachineWatcher(machine) {
+    if (machineWatchers.has(machine.id)) return;
+    const root = machineDir(machine);
+    fs.mkdirSync(root, { recursive: true });
+    const options = process.platform === 'win32' || process.platform === 'darwin'
+      ? { recursive: true }
+      : {};
+    try {
+      const watcher = fs.watch(root, options, () => invalidateMachineManifest(machine, 'filesystem'));
+      watcher.on('error', error => console.warn(`[machine] Asset watcher failed for ${machine.name}:`, error.message));
+      machineWatchers.set(machine.id, watcher);
+    } catch (error) {
+      console.warn(`[machine] Could not watch assets for ${machine.name}:`, error.message);
     }
   }
 
@@ -384,6 +482,7 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
       };
       registry.machines.push(machine);
       fs.mkdirSync(machineDir(machine), { recursive: true });
+      ensureMachineWatcher(machine);
       saveRegistry();
       console.log(`[machine] Registered ${machine.name} (${machine.id})`);
       return res.status(201).json({
@@ -396,13 +495,15 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
     app.get('/api/machine/status', (req, res) => {
       const machine = authenticateRequest(req, res);
       if (!machine) return;
-      const files = listFilesRecursive(machineDir(machine));
+      const manifest = getMachineManifest(machine);
+      const activeModel = ensureActiveModel(machine, manifest, true);
       return res.json({
         authenticated: true,
         machine: { id: machine.id, name: machine.name, createdAt: machine.createdAt },
-        activeModel: machine.activeModel || 'Default',
-        fileCount: files.length,
-        storageBytes: files.reduce((sum, file) => sum + file.size, 0),
+        activeModel,
+        revision: manifest.revision,
+        fileCount: manifest.fileCount,
+        storageBytes: manifest.storageBytes,
         maxUploadBytes: MAX_UPLOAD_BYTES
       });
     });
@@ -410,7 +511,8 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
     app.get('/api/machine/files', (req, res) => {
       const machine = authenticateRequest(req, res);
       if (!machine) return;
-      return res.json({ files: listFilesRecursive(machineDir(machine)) });
+      const manifest = getMachineManifest(machine);
+      return res.json({ revision: manifest.revision, files: manifest.files });
     });
 
     app.put('/api/machine/assets', (req, res) => {
@@ -420,17 +522,27 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
       if (!target) return res.status(400).json({ error: 'invalid or unsupported asset path' });
 
       const declaredLength = Number(req.headers['content-length'] || 0);
-      if (declaredLength > MAX_UPLOAD_BYTES) return res.status(413).json({ error: 'file exceeds 250 MB limit' });
+      if (Number.isFinite(declaredLength) && declaredLength > MAX_UPLOAD_BYTES) {
+        return res.status(413).json({ error: 'file exceeds 250 MB limit' });
+      }
 
       fs.mkdirSync(path.dirname(target.resolved), { recursive: true });
       const tempPath = path.join(UPLOAD_TMP_DIR, `${machine.id}-${crypto.randomBytes(12).toString('hex')}.upload`);
       const output = fs.createWriteStream(tempPath, { flags: 'wx', mode: 0o600 });
+      activeUploads.set(machine.id, (activeUploads.get(machine.id) || 0) + 1);
       let bytes = 0;
       let finished = false;
+
+      const releaseUpload = () => {
+        const remaining = Math.max(0, (activeUploads.get(machine.id) || 1) - 1);
+        if (remaining === 0) activeUploads.delete(machine.id);
+        else activeUploads.set(machine.id, remaining);
+      };
 
       const fail = (status, message) => {
         if (finished) return;
         finished = true;
+        releaseUpload();
         output.destroy();
         fs.rm(tempPath, { force: true }, () => {});
         if (!res.headersSent) res.status(status).json({ error: message });
@@ -450,9 +562,11 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
       output.on('finish', () => {
         if (finished) return;
         finished = true;
+        releaseUpload();
         try {
           fs.rmSync(target.resolved, { force: true });
           fs.renameSync(tempPath, target.resolved);
+          invalidateMachineManifest(machine, 'upload');
           console.log(`[machine] ${machine.name} uploaded ${target.safe} (${bytes} bytes)`);
           res.json({ success: true, path: target.safe, size: bytes });
         } catch (error) {
@@ -470,6 +584,7 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
       if (!target || !fs.existsSync(target.resolved)) return res.status(404).json({ error: 'asset not found' });
       fs.unlinkSync(target.resolved);
       removeEmptyParents(target.resolved, target.root);
+      invalidateMachineManifest(machine, 'delete');
       return res.json({ success: true });
     });
 
@@ -486,47 +601,49 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
     app.get('/api/models', (req, res) => {
       const machine = authenticateRequest(req, res);
       if (!machine) return;
-      const models = listModels(machine, req.machineToken);
-      const names = new Set(models.map(model => model.name));
-      if (!names.has(machine.activeModel)) machine.activeModel = models[0]?.name || 'Default';
-      return res.json({ models, active: machine.activeModel || 'Default' });
+      const manifest = getMachineManifest(machine);
+      const active = ensureActiveModel(machine, manifest, true);
+      return res.json({ models: manifest.models, active, revision: manifest.revision });
     });
 
     app.get('/api/assets', (req, res) => {
       const machine = authenticateRequest(req, res);
       if (!machine) return;
-      const requestedModel = String(req.query.model || machine.activeModel || 'Default');
-      const models = listModels(machine, req.machineToken);
-      if (!models.some(model => model.name === requestedModel)) return res.json({});
-      const model = getModelDir(machine, requestedModel);
-      return res.json(scanModelAssets(machine, req.machineToken, model.directory, model.relative));
+      const manifest = getMachineManifest(machine);
+      const requestedModel = String(req.query.model || ensureActiveModel(machine, manifest, true));
+      const model = manifest.modelData[requestedModel];
+      if (!model) return res.json({});
+      return res.json(materializeToken(model.assets, req.machineToken));
     });
 
     app.post('/api/models/select', (req, res) => {
       const machine = authenticateRequest(req, res);
       if (!machine) return;
       const modelName = String(req.body && req.body.model || '');
-      const models = listModels(machine, req.machineToken);
-      if (!models.some(model => model.name === modelName)) return res.status(404).json({ error: 'model not found for this machine' });
+      const manifest = getMachineManifest(machine);
+      if (!manifest.modelData[modelName]) return res.status(404).json({ error: 'model not found for this machine' });
       machine.activeModel = modelName;
       activeEmotes.delete(machine.id);
       saveRegistry();
-      broadcastMachine(machine.id, { type: 'model_change', model: modelName });
+      broadcastMachine(machine.id, { type: 'model_change', model: modelName, revision: manifest.revision });
       return res.json({ success: true, active: modelName });
     });
 
     app.get('/api/emotes', (req, res) => {
       const machine = authenticateRequest(req, res);
       if (!machine) return;
-      const model = getModelDir(machine, machine.activeModel);
-      return res.json(scanEmotes(machine, req.machineToken, model.directory, model.relative));
+      const manifest = getMachineManifest(machine);
+      const active = ensureActiveModel(machine, manifest, true);
+      const emotes = manifest.modelData[active]?.emotes || [];
+      return res.json(materializeToken(emotes, req.machineToken));
     });
 
     app.post('/api/emote/trigger', (req, res) => {
       const machine = authenticateRequest(req, res);
       if (!machine) return;
-      const model = getModelDir(machine, machine.activeModel);
-      const emotes = scanEmotes(machine, req.machineToken, model.directory, model.relative);
+      const manifest = getMachineManifest(machine);
+      const active = ensureActiveModel(machine, manifest, true);
+      const emotes = materializeToken(manifest.modelData[active]?.emotes || [], req.machineToken);
       const emote = emotes.find(item => item.name === req.body?.name);
       if (!emote) return res.status(404).json({ error: 'emote not found for this machine' });
       activeEmotes.set(machine.id, emote);
@@ -560,6 +677,8 @@ function installMachineMode({ expressModule, WebSocketServer, appDir }) {
       return res.json({ success: true, sub });
     });
   }
+
+  for (const machine of registry.machines) ensureMachineWatcher(machine);
 
   const nativeExpressFactory = expressModule;
   function machineExpressFactory(...args) {
