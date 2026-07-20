@@ -61,6 +61,13 @@
     renderPreviewState();
   });
 
-  stopButton.addEventListener('click', () => queueMicrotask(renderPreviewState));
+  stopButton.addEventListener('click', () => {
+    if (typeof queueMicrotask === 'function') {
+      queueMicrotask(renderPreviewState);
+    } else {
+      Promise.resolve().then(renderPreviewState);
+    }
+  });
+
   renderPreviewState();
 })();
