@@ -8,18 +8,48 @@
   const nativeFetch = window.fetch.bind(window);
   const MEDIA_EXTENSIONS = new Set(['webm', 'webp', 'gif', 'png', 'mp4']);
 
+  function normalizeCredentialText(value) {
+    return String(value || '')
+      .replace(/%5Cu0026/gi, '&')
+      .replace(/\\u0026/gi, '&')
+      .replace(/&amp;/gi, '&');
+  }
+
   function credentialsFromLocation() {
     const pageUrl = new URL(location.href);
-    const hash = new URLSearchParams(pageUrl.hash.replace(/^#/, ''));
-    const actorId = hash.get('actor_id') || pageUrl.searchParams.get('actor_id') || '';
-    const actorToken = hash.get('actor_token') || pageUrl.searchParams.get('actor_token') || '';
+    const rawHash = pageUrl.hash.replace(/^#/, '');
+    const rawQuery = pageUrl.search.replace(/^\?/, '');
+    const hash = new URLSearchParams(normalizeCredentialText(rawHash));
+    const query = new URLSearchParams(normalizeCredentialText(rawQuery));
 
-    if (pageUrl.searchParams.has('actor_id') || pageUrl.searchParams.has('actor_token')) {
+    let actorId = hash.get('actor_id') || query.get('actor_id') || '';
+    let actorToken = hash.get('actor_token') || query.get('actor_token') || '';
+
+    // Also accept a compact single-parameter URL. Actor IDs and generated
+    // base64url tokens cannot contain a dot, so the first dot is unambiguous.
+    const compact = hash.get('actor') || query.get('actor') || '';
+    if ((!actorId || !actorToken) && compact) {
+      const separator = compact.indexOf('.');
+      if (separator > 0) {
+        actorId ||= compact.slice(0, separator);
+        actorToken ||= compact.slice(separator + 1);
+      }
+    }
+
+    const queryHasCredentials = ['actor', 'actor_id', 'actor_token']
+      .some(name => query.has(name));
+    const hashNeededNormalization = rawHash !== hash.toString();
+
+    // Keep credentials out of the ordinary query string after startup. Also
+    // repair JSON-escaped separators in-place so OBS refreshes use a clean URL.
+    if (queryHasCredentials || hashNeededNormalization) {
+      pageUrl.searchParams.delete('actor');
       pageUrl.searchParams.delete('actor_id');
       pageUrl.searchParams.delete('actor_token');
-      if (actorId) hash.set('actor_id', actorId);
-      if (actorToken) hash.set('actor_token', actorToken);
-      pageUrl.hash = hash.toString();
+      const cleanHash = new URLSearchParams();
+      if (actorId) cleanHash.set('actor_id', actorId);
+      if (actorToken) cleanHash.set('actor_token', actorToken);
+      pageUrl.hash = cleanHash.toString();
       history.replaceState(null, '', pageUrl);
     }
 
@@ -38,7 +68,10 @@
   }
 
   if (!credentials.actorId || !credentials.actorToken) {
-    showWarning('This actor overlay URL is missing its actor ID or token. Use the OBS URL returned when the actor is created.');
+    const incomplete = credentials.actorId || credentials.actorToken;
+    showWarning(incomplete
+      ? 'This actor overlay URL has incomplete credentials. Paste the complete OBS URL; JSON text containing \\u0026 is also accepted after updating and restarting LAN mode.'
+      : 'This actor overlay URL is missing its actor ID or token. Use the OBS URL returned when the actor is created.');
   }
 
   function authenticatedActorUrl(pathname) {
