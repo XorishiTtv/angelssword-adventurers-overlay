@@ -16,7 +16,7 @@
   toggleButton.type = 'button';
   toggleButton.id = 'btn-toggle-webcam-preview';
   toggleButton.className = 'btn btn-secondary';
-  toggleButton.hidden = true;
+  toggleButton.style.display = 'none';
   toggleButton.setAttribute('aria-controls', 'webcam-container');
   stopButton.insertAdjacentElement('afterend', toggleButton);
 
@@ -32,8 +32,11 @@
   function renderPreviewState() {
     const webcamActive = hasLiveVideoTrack();
 
-    toggleButton.hidden = !webcamActive;
-    webcamContainer.hidden = !webcamActive || !previewVisible;
+    // control.js uses inline display styles, so this controller must use the
+    // same mechanism. The HTML hidden property can be overridden by an
+    // existing inline display:block in some embedded Chromium/OBS versions.
+    toggleButton.style.display = webcamActive ? '' : 'none';
+    webcamContainer.style.display = webcamActive && previewVisible ? 'block' : 'none';
     toggleButton.textContent = previewVisible ? 'Hide Preview' : 'Show Preview';
     toggleButton.title = previewVisible
       ? 'Hide the local camera preview while keeping face tracking active'
