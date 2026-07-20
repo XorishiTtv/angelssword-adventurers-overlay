@@ -27,7 +27,7 @@ function buildLanExecutable() {
   const icon = path.join(ROOT, 'icon.ico');
   const command = [
     'npx --yes pkg',
-    `"${path.join(ROOT, 'lan-server.js')}"`,
+    `"${path.join(ROOT, 'lan-global-server.js')}"`,
     '--targets node18-win-x64',
     '--output', `"${LAN_EXE}"`,
     '--compress GZip',
@@ -63,6 +63,8 @@ echo.
 echo  Each computer registers its own machine token and receives
 echo  an isolated private asset folder under machine-data.
 echo.
+echo  Models in public\assets are shared read-only global models.
+echo.
 echo  Use one of the HTTPS URLs printed below.
 echo  Press Ctrl+C to stop the server.
 echo.
@@ -82,7 +84,7 @@ function addLanDocumentation() {
   const marker = '## Running on another computer';
   let readme = fs.readFileSync(readmePath, 'utf8');
   if (!readme.includes(marker)) {
-    readme += `\n\n${marker}\n\nFor a second computer on the same trusted private network, double-click\n\`Start AS Adventurer LAN.bat\`. The first launch creates a private HTTPS\ncertificate. Copy the generated \`lan-cert\` folder to the second computer and\nrun its certificate installer once. Open the secure Control Panel, register that\ncomputer to create its token, upload its private model folder, and copy the\nauthenticated OBS URL. See \`LAN_SETUP.md\` for full steps.\n`;
+    readme += `\n\n${marker}\n\nFor a second computer on the same trusted private network, double-click\n\`Start AS Adventurer LAN.bat\`. The first launch creates a private HTTPS\ncertificate. Copy the generated \`lan-cert\` folder to the second computer and\nrun its certificate installer once. Open the secure Control Panel, register that\ncomputer to create its token, upload its private model folder, and copy the\nauthenticated OBS URL. Models under \`public/assets\` are available to all\nregistered machines as read-only global models. See \`LAN_SETUP.md\` for full steps.\n`;
     fs.writeFileSync(readmePath, readme);
   }
 }
