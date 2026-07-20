@@ -79,6 +79,23 @@ Save the token and OBS URL immediately. The raw token cannot be recovered from t
 
 Create a Browser Source and paste the returned `obsUrl`.
 
+The actor overlay accepts all of these credential forms:
+
+```text
+actor-overlay.html#actor_id=ACTOR_ID&actor_token=ACTOR_TOKEN
+actor-overlay.html?actor_id=ACTOR_ID&actor_token=ACTOR_TOKEN
+actor-overlay.html?actor=ACTOR_ID.ACTOR_TOKEN
+```
+
+It also repairs PowerShell JSON text where the `&` separator was written as the literal sequence `\u0026`. After updating the branch, restart LAN mode and refresh the OBS Browser Source so the new actor client is loaded.
+
+When reading an acceptance-test credentials file, parse the JSON instead of copying the escaped raw text:
+
+```powershell
+$c = Get-Content ".\four-actor-credentials-*.json" -Raw | ConvertFrom-Json
+$c.actors | Format-List name, obsUrl
+```
+
 The actor overlay reuses the existing layered renderer, including animated WebM, MP4, GIF, WebP, and PNG state assets. It does not request a camera or microphone and it ignores normal control-panel tracking broadcasts.
 
 ## 4. Set expression and start TTS speaking
@@ -166,6 +183,20 @@ curl.exe -k -X POST "https://OVERLAY-HOST:3000/api/actors/ACTOR_ID/token/regener
 ```
 
 This disconnects overlays using the old token and returns a new token plus OBS URL.
+
+## Phase 1 acceptance result
+
+The four-actor automated acceptance run completed with 21 passes, 0 failures, and 3 environment-only manual checks. It covered:
+
+- four actors using three global models and one private model;
+- actor-token authentication and cross-actor rejection;
+- independent expressions;
+- simultaneous speaking isolation;
+- stale-session rejection and correct-session stopping;
+- speaking timeout recovery;
+- state reset and private-model coverage.
+
+The remaining deployment checks are visual OBS rendering, OBS CPU/GPU observation, and reconnect behavior after restarting the live LAN server.
 
 ## Storage and security
 
