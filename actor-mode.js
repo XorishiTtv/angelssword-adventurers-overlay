@@ -134,6 +134,17 @@ function installActorMode(options = {}) {
     return actor;
   }
 
+  function authenticateOwnedActor(req, res) {
+    const machine = authenticateMachine(req, res);
+    if (!machine) return null;
+    const actor = findActor(req.params.actorId);
+    if (!actor || actor.machineId !== machine.id) {
+      res.status(404).json({ error: 'actor not found for this machine' });
+      return null;
+    }
+    return { machine, actor };
+  }
+
   function sanitizeName(value) {
     return String(value || '')
       .trim()
@@ -358,6 +369,16 @@ function installActorMode(options = {}) {
     return getRuntimeState(actor);
   }
 
+  function resetActorState(actor) {
+    clearSpeakingTimer(actor.id);
+    return commitRuntimeChange(actor, state => {
+      state.expression = sanitizeExpression(actor.defaultExpression) || 'neutral';
+      state.speaking = false;
+      state.speechSessionId = null;
+      state.speakingExpiresAt = null;
+    });
+  }
+
   function encodeRelativePath(relativePath) {
     return relativePath.split('/').map(encodeURIComponent).join('/');
   }
@@ -461,10 +482,9 @@ function installActorMode(options = {}) {
     });
 
     app.patch('/api/actors/:actorId', (req, res) => {
-      const machine = authenticateMachine(req, res);
-      if (!machine) return;
-      const actor = findActor(req.params.actorId);
-      if (!actor || actor.machineId !== machine.id) return res.status(404).json({ error: 'actor not found for this machine' });
+      const owned = authenticateOwnedActor(req, res);
+      if (!owned) return;
+      const { machine, actor } = owned;
 
       let modelChanged = false;
       if (req.body?.name !== undefined) {
@@ -497,11 +517,29 @@ function installActorMode(options = {}) {
       return res.json({ success: true, actor: publicActor(actor) });
     });
 
+    app.delete('/api/actors/:actorId', (req, res) => {
+      const owned = authenticateOwnedActor(req, res);
+      if (!owned) return;
+      const { actor } = owned;
+
+      clearSpeakingTimer(actor.id);
+      runtimeStates.delete(actor.id);
+      const clients = actorClients.get(actor.id);
+      if (clients) {
+        for (const socket of clients) socket.close(4002, 'actor deleted');
+        actorClients.delete(actor.id);
+      }
+
+      actorsDocument.actors = actorsDocument.actors.filter(item => item.id !== actor.id);
+      saveActors();
+      console.log(`[actors] Deleted ${actor.name} (${actor.id})`);
+      return res.json({ success: true, actorId: actor.id });
+    });
+
     app.post('/api/actors/:actorId/token/regenerate', (req, res) => {
-      const machine = authenticateMachine(req, res);
-      if (!machine) return;
-      const actor = findActor(req.params.actorId);
-      if (!actor || actor.machineId !== machine.id) return res.status(404).json({ error: 'actor not found for this machine' });
+      const owned = authenticateOwnedActor(req, res);
+      if (!owned) return;
+      const { actor } = owned;
       const token = crypto.randomBytes(32).toString('base64url');
       actor.tokenHash = hashToken(token);
       actor.updatedAt = new Date().toISOString();
@@ -510,7 +548,47 @@ function installActorMode(options = {}) {
       if (clients) {
         for (const socket of clients) socket.close(4001, 'actor token regenerated');
       }
-      return res.json({ success: true, token, obsUrl: actorObsUrl(req, actor, token) });
+      return res.json({ success: true, actor: publicActor(actor), token, obsUrl: actorObsUrl(req, actor, token) });
+    });
+
+    app.post('/api/actors/:actorId/manage/state', (req, res) => {
+      const owned = authenticateOwnedActor(req, res);
+      if (!owned) return;
+      const { actor } = owned;
+      let changed = false;
+
+      if (req.body?.expression !== undefined) {
+        const expression = sanitizeExpression(req.body.expression);
+        if (!expression) return res.status(400).json({ error: 'unsupported expression' });
+        const state = getRuntimeState(actor);
+        if (expression !== state.expression) {
+          commitRuntimeChange(actor, current => { current.expression = expression; });
+          changed = true;
+        }
+      }
+
+      if (req.body?.speaking !== undefined) {
+        if (typeof req.body.speaking !== 'boolean') return res.status(400).json({ error: 'speaking must be true or false' });
+        if (req.body.speaking) {
+          const requestedSessionId = sanitizeSessionId(req.body.speechSessionId);
+          const sessionId = requestedSessionId || `control-${crypto.randomBytes(8).toString('hex')}`;
+          startSpeaking(actor, sessionId, req.body.expiresInMs);
+          changed = true;
+        } else {
+          stopSpeaking(actor, null, 'stopped by control panel');
+          changed = true;
+        }
+      }
+
+      return res.json({ success: true, changed, actor: publicActor(actor) });
+    });
+
+    app.post('/api/actors/:actorId/manage/reset', (req, res) => {
+      const owned = authenticateOwnedActor(req, res);
+      if (!owned) return;
+      const { actor } = owned;
+      resetActorState(actor);
+      return res.json({ success: true, actor: publicActor(actor) });
     });
 
     app.get('/api/actors/:actorId/state', (req, res) => {
@@ -559,13 +637,7 @@ function installActorMode(options = {}) {
     app.post('/api/actors/:actorId/reset', (req, res) => {
       const actor = authenticateActor(req, res);
       if (!actor) return;
-      clearSpeakingTimer(actor.id);
-      commitRuntimeChange(actor, state => {
-        state.expression = sanitizeExpression(actor.defaultExpression) || 'neutral';
-        state.speaking = false;
-        state.speechSessionId = null;
-        state.speakingExpiresAt = null;
-      });
+      resetActorState(actor);
       return res.json({ success: true, actor: publicActor(actor) });
     });
 
