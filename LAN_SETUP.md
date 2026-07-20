@@ -16,12 +16,25 @@ Every computer that uses secure LAN mode registers as a separate logical machine
 
 The raw token is shown to the registered browser and is stored only as a hash on the server. Treat the token like a password. Anyone who copies it can impersonate that logical machine.
 
-Machine-scoped APIs, WebSockets, model selection, emotes, uploads, and asset files require the token. A registered machine cannot list, select, download, or delete another machine's assets. The standard localhost launcher continues using `public/assets/` and is unchanged.
+Machine-scoped APIs, WebSockets, model selection, emotes, uploads, and private asset files require the token. A registered machine cannot list, select, download, or delete another machine's private assets.
+
+## Shared global models
+
+Models stored by the host under `public/assets/` are available to every registered LAN machine as read-only **Global Models**. The same directory continues to provide models to the normal localhost launcher.
+
+The model selector separates shared and private libraries into:
+
+- **Global Models** — host-managed models from `public/assets/`;
+- **My Models** — private uploads from `machine-data/assets/<machine-id>/`.
+
+Global and private models may have the same display name because LAN mode assigns scoped identities internally. LAN computers cannot upload to or delete from the global library. Add, replace, or remove global model files directly on the host. The server watches the global directory and refreshes connected machines without reloading their camera or microphone capture.
+
+Global model selection and emote state remain machine-scoped. Two machines can use the same global model without triggering each other's emotes or changing each other's active model.
 
 ## Typical setup
 
-- **Host computer:** runs AS Adventurer and stores certificates plus machine asset data.
-- **LAN/overlay computer:** opens the control panel, registers itself, supplies its camera/microphone, uploads its own models, and copies its authenticated OBS URL.
+- **Host computer:** runs AS Adventurer and stores certificates, shared global models, and private machine asset data.
+- **LAN/overlay computer:** opens the control panel, registers itself, supplies its camera/microphone, chooses a global model or uploads private models, and copies its authenticated OBS URL.
 - Both computers must be connected to the same trusted local network.
 
 ## Start secure LAN mode
@@ -78,7 +91,7 @@ The **Machine Assets** card supports two upload methods:
 
 Supported upload types are `.webm`, `.webp`, `.gif`, `.png`, `.mp4`, `.mp3`, `.wav`, `.ogg`, and `.m4a`. Each file is limited to 250 MB. Uploaded files can be reviewed and deleted from the same card.
 
-The server keeps a cached manifest for each registered machine. Uploads, deletions, and filesystem changes invalidate that manifest and publish an asset-change event to the machine's connected control panel and overlay. The active model and emote list refresh without polling or restarting camera and microphone capture.
+The server keeps cached manifests for the global library and each registered machine. Uploads, deletions, and filesystem changes invalidate only the affected manifest and publish an asset-change event to connected control panels and overlays. Active models and emote lists refresh without polling or restarting camera and microphone capture.
 
 ## OBS setup
 
@@ -94,7 +107,9 @@ If OBS rejects the certificate, install the generated root certificate on the OB
 
 ## Backups and lost tokens
 
-Back up the complete `machine-data/` directory to preserve registrations and uploaded assets. The registry stores only token hashes, so a lost raw token cannot be recovered from the server. Register a new machine and re-upload or move the files on the host if a token is lost.
+Back up the complete `machine-data/` directory to preserve registrations, global selections, and private uploads. The registry stores only token hashes, so a lost raw token cannot be recovered from the server. Register a new machine and re-upload or move the files on the host if a token is lost.
+
+Back up `public/assets/` separately to preserve the shared global library.
 
 ## Standalone release
 
@@ -109,7 +124,7 @@ or double-click `build-release-with-lan.bat`.
 The release contains two launchers:
 
 - `Start AS Adventurer.bat` — localhost-only mode using `public/assets/`.
-- `Start AS Adventurer LAN.bat` — HTTPS, token-authenticated machine mode using `machine-data/`.
+- `Start AS Adventurer LAN.bat` — HTTPS, token-authenticated machine mode with shared `public/assets/` models and private `machine-data/` uploads.
 
 ## Non-Windows hosts
 
@@ -129,5 +144,7 @@ Allow access on **Private networks** only. If no prompt appears and the LAN comp
 ## Security
 
 Secure LAN mode requires machine tokens but does not protect against an untrusted person who obtains a token or controls the host computer. Use it only on a trusted private network, stop the server when it is not needed, and do not forward port `3000` through the router.
+
+Global assets under `public/assets/` are intentionally shared and are served as public static files on the trusted LAN. Do not place secrets or private media in the global library.
 
 Never share or commit `lan-cert/` or `machine-data/`. The repository ignores both directories.
