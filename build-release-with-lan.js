@@ -75,7 +75,7 @@ pause
 }
 
 function addLanDocumentation() {
-  for (const fileName of ['LAN_SETUP.md', 'AI_ACTOR_MVP.md']) {
+  for (const fileName of ['LAN_SETUP.md', 'AI_ACTOR_MVP.md', 'AI_ACTOR_CONTROL_PANEL.md']) {
     const sourceGuide = path.join(ROOT, fileName);
     if (fs.existsSync(sourceGuide)) {
       fs.copyFileSync(sourceGuide, path.join(RELEASE, fileName));
@@ -86,7 +86,7 @@ function addLanDocumentation() {
   const marker = '## Running on another computer';
   let readme = fs.readFileSync(readmePath, 'utf8');
   if (!readme.includes(marker)) {
-    readme += `\n\n${marker}\n\nFor a second computer on the same trusted private network, double-click\n\`Start AS Adventurer LAN.bat\`. The first launch creates a private HTTPS\ncertificate. Copy the generated \`lan-cert\` folder to the second computer and\nrun its certificate installer once. Open the secure Control Panel, register that\ncomputer to create its token, upload its private model folder, and copy the\nauthenticated OBS URL. Models under \`public/assets\` are available to all\nregistered machines as read-only global models. See \`LAN_SETUP.md\` for full steps.\n\nThe experimental AI Actor API can drive a dedicated OBS model from Streamer.bot.\nSee \`AI_ACTOR_MVP.md\` for the Phase 1 setup and request sequence.\n`;
+    readme += `\n\n${marker}\n\nFor a second computer on the same trusted private network, double-click\n\`Start AS Adventurer LAN.bat\`. The first launch creates a private HTTPS\ncertificate. Copy the generated \`lan-cert\` folder to the second computer and\nrun its certificate installer once. Open the secure Control Panel, register that\ncomputer to create its token, upload its private model folder, and copy the\nauthenticated OBS URL. Models under \`public/assets\` are available to all\nregistered machines as read-only global models. See \`LAN_SETUP.md\` for full steps.\n\nAI Actors can drive dedicated OBS models from Streamer.bot. See\n\`AI_ACTOR_MVP.md\` for API setup and \`AI_ACTOR_CONTROL_PANEL.md\` for actor\ncreation, testing, model selection, credential regeneration, and deletion.\n`;
     fs.writeFileSync(readmePath, readme);
   }
 }
