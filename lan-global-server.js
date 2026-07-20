@@ -25,4 +25,5 @@ machineMode.installMachineMode = function installMachineGlobalAndActorModes(opti
   };
 };
 
+require('./actor-control-bootstrap');
 require('./lan-server');
