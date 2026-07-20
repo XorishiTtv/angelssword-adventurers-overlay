@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "start": "node server.js",
-    "start:lan": "node lan-server.js",
+    "start:lan": "node lan-global-server.js",
     "placeholders": "node generate-placeholders.js",
     "build-release:lan": "node build-release-with-lan.js"
   },
