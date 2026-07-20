@@ -44,9 +44,11 @@ echo.
 echo  Each LAN computer registers a private machine token.
 echo  Its uploaded assets are stored separately under machine-data.
 echo.
+echo  Models in public\assets are shared read-only global models.
+echo.
 echo  Press Ctrl+C to stop the server.
 echo.
 
 cd /d "%~dp0"
-"%NODE%" lan-server.js
+"%NODE%" lan-global-server.js
 pause
