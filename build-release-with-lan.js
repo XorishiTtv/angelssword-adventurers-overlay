@@ -75,16 +75,18 @@ pause
 }
 
 function addLanDocumentation() {
-  const sourceGuide = path.join(ROOT, 'LAN_SETUP.md');
-  if (fs.existsSync(sourceGuide)) {
-    fs.copyFileSync(sourceGuide, path.join(RELEASE, 'LAN_SETUP.md'));
+  for (const fileName of ['LAN_SETUP.md', 'AI_ACTOR_MVP.md']) {
+    const sourceGuide = path.join(ROOT, fileName);
+    if (fs.existsSync(sourceGuide)) {
+      fs.copyFileSync(sourceGuide, path.join(RELEASE, fileName));
+    }
   }
 
   const readmePath = path.join(RELEASE, 'README.md');
   const marker = '## Running on another computer';
   let readme = fs.readFileSync(readmePath, 'utf8');
   if (!readme.includes(marker)) {
-    readme += `\n\n${marker}\n\nFor a second computer on the same trusted private network, double-click\n\`Start AS Adventurer LAN.bat\`. The first launch creates a private HTTPS\ncertificate. Copy the generated \`lan-cert\` folder to the second computer and\nrun its certificate installer once. Open the secure Control Panel, register that\ncomputer to create its token, upload its private model folder, and copy the\nauthenticated OBS URL. Models under \`public/assets\` are available to all\nregistered machines as read-only global models. See \`LAN_SETUP.md\` for full steps.\n`;
+    readme += `\n\n${marker}\n\nFor a second computer on the same trusted private network, double-click\n\`Start AS Adventurer LAN.bat\`. The first launch creates a private HTTPS\ncertificate. Copy the generated \`lan-cert\` folder to the second computer and\nrun its certificate installer once. Open the secure Control Panel, register that\ncomputer to create its token, upload its private model folder, and copy the\nauthenticated OBS URL. Models under \`public/assets\` are available to all\nregistered machines as read-only global models. See \`LAN_SETUP.md\` for full steps.\n\nThe experimental AI Actor API can drive a dedicated OBS model from Streamer.bot.\nSee \`AI_ACTOR_MVP.md\` for the Phase 1 setup and request sequence.\n`;
     fs.writeFileSync(readmePath, readme);
   }
 }

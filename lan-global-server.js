@@ -1,15 +1,28 @@
 'use strict';
 
-// Load the shared global-model layer immediately after machine mode has patched
-// Express, but before server.js creates its app and WebSocket server.
+// Load shared global models and AI actor support immediately after machine mode
+// patches Express, but before server.js creates its app and WebSocket server.
 const machineMode = require('./machine-mode');
 const { installGlobalModelMode } = require('./global-model-mode');
+const { installActorMode } = require('./actor-mode');
 const nativeInstallMachineMode = machineMode.installMachineMode;
 
-machineMode.installMachineMode = function installMachineAndGlobalModes(options) {
+machineMode.installMachineMode = function installMachineGlobalAndActorModes(options) {
   const result = nativeInstallMachineMode(options);
   installGlobalModelMode({ appDir: options.appDir });
-  return result;
+  const actorMode = installActorMode({ appDir: options.appDir });
+
+  return {
+    ...result,
+    authenticateWebSocket(request) {
+      return result.authenticateWebSocket(request) || actorMode.authenticateWebSocket(request);
+    },
+    attachSocket(socket, context) {
+      if (context?.kind === 'actor') return actorMode.attachSocket(socket, context);
+      return result.attachSocket(socket, context);
+    },
+    getActorCount: actorMode.getActorCount
+  };
 };
 
 require('./lan-server');
