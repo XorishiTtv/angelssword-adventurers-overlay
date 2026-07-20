@@ -32,9 +32,8 @@
   function renderPreviewState() {
     const webcamActive = hasLiveVideoTrack();
 
-    // control.js uses inline display styles, so this controller must use the
-    // same mechanism. The HTML hidden property can be overridden by an
-    // existing inline display:block in some embedded Chromium/OBS versions.
+    // Use the same inline display mechanism as control.js. This makes hiding
+    // deterministic in both normal browsers and embedded Chromium/OBS views.
     toggleButton.style.display = webcamActive ? '' : 'none';
     webcamContainer.style.display = webcamActive && previewVisible ? 'block' : 'none';
     toggleButton.textContent = previewVisible ? 'Hide Preview' : 'Show Preview';
