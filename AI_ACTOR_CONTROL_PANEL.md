@@ -49,6 +49,18 @@ Expression and speaking test controls are authorized by the current machine regi
 
 Streamer.bot should continue to use the actor-token API and speech session IDs. The control-panel test endpoints are for the registered machine owner.
 
+## Streamer.bot helper
+
+After creating an actor, use the reusable helper in:
+
+```text
+streamerbot/ASAdventurerActorHelper.cs
+```
+
+The helper provides named `StartTts`, `StopTts`, `SetExpression`, and `ResetActor` methods, creates speech session IDs automatically, and preserves stale-stop protection across separate Streamer.bot actions. See `STREAMERBOT_AI_ACTORS.md` for installation, arguments, token storage, outputs, and four-bot setup.
+
+The helper uses the actor ID and actor token. It does not use the machine token or the machine-owner test endpoints.
+
 ## Deleting an actor
 
 Deleting an actor:
