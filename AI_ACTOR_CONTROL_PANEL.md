@@ -89,6 +89,21 @@ Machine-owned emote triggers use short-lived, actor-scoped signed media URLs. Th
 
 Changing an actor's model, resetting it, regenerating its token, or deleting it releases the active emote.
 
+## Performance and recovery
+
+Both the main overlay and actor overlays load `overlay-runtime.js` before the shared renderer.
+
+- Asset requests that fail because of a short LAN/server interruption are retried with bounded backoff.
+- Inactive state videos are paused instead of continuing to consume CPU/GPU resources behind the visible layer.
+- All overlay videos pause while the browser source is hidden and resume when it becomes visible again.
+- Removed model and emote media is detached so browser memory is released sooner after model changes and animation transitions.
+- An overlay that started while the server was unavailable probes for assets after the WebSocket recovers and performs a bounded self-reload when required.
+- Actor sockets replay the actor's persisted model before expression and speaking state, allowing a stale or empty actor overlay to rebuild after a reconnect.
+- Held Type 2 actor emotes are restored after a transient socket interruption. Type 1 one-shot emotes are intentionally not replayed.
+- Recovery reloads are limited to three within two minutes to avoid an endless refresh loop when configuration or credentials are invalid.
+
+These recovery controls do not regenerate tokens, alter OBS URLs, or persist actor secrets.
+
 ## Streamer.bot helper
 
 The reusable helper is located at:
@@ -165,4 +180,4 @@ POST /api/actors/:actorId/emote/sub
 
 ## Validation status
 
-The actor-emote server routes, nested sub-animation lookup, signed media access, actor-token access, and WebSocket message contract were exercised in a local Node harness. The control-panel and helper source passed static syntax/contract checks. Live emote playback in the user's Windows control panel, OBS Browser Sources, and Streamer.bot remains to be tested.
+The actor-emote server routes, nested sub-animation lookup, signed media access, actor-token access, and WebSocket message contract were exercised in a local Node harness. The shared overlay runtime passed syntax and browser-stub tests for bounded asset retry and WebSocket wrapping. The control-panel and helper source passed static syntax/contract checks. Live actor-emote playback and restart recovery in the user's Windows control panel, OBS Browser Sources, and Streamer.bot remain to be tested.
