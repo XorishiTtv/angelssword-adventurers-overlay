@@ -162,3 +162,7 @@ POST /api/actors/:actorId/emote/sub
 - Raw actor tokens are never returned by actor listing, profile-update, or machine-owned emote endpoints.
 - Machine-owned emote media links are HMAC-signed, actor/model/path scoped, short-lived, and invalidated by token regeneration.
 - Complete OBS URLs and actor tokens should be handled like passwords.
+
+## Validation status
+
+The actor-emote server routes, nested sub-animation lookup, signed media access, actor-token access, and WebSocket message contract were exercised in a local Node harness. The control-panel and helper source passed static syntax/contract checks. Live emote playback in the user's Windows control panel, OBS Browser Sources, and Streamer.bot remains to be tested.
