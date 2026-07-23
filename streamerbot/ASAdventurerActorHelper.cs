@@ -69,8 +69,20 @@ public class CPHInline
             case "resetactor":
             case "reset_actor":
                 return ResetActor();
+            case "emote":
+            case "triggeremote":
+            case "trigger_emote":
+                return TriggerEmote();
+            case "releaseemote":
+            case "release_emote":
+            case "emote_release":
+                return ReleaseEmote();
+            case "subemote":
+            case "triggersubemote":
+            case "trigger_sub_emote":
+                return TriggerSubEmote();
             default:
-                return Fail("Set actorCommand to start, stop, expression, or reset, or call a named helper method.");
+                return Fail("Set actorCommand to start, stop, expression, reset, emote, release_emote, or sub_emote, or call a named helper method.");
         }
     }
 
@@ -207,6 +219,83 @@ public class CPHInline
             CPH.UnsetGlobalVar(SessionGlobalName(config.ActorId), false);
             CPH.LogInfo("AS Adventurer actor reset: " + config.ActorId);
             return true;
+        }
+        catch (Exception error)
+        {
+            return Fail(error.Message);
+        }
+    }
+
+    public bool TriggerEmote()
+    {
+        try
+        {
+            ActorConfiguration config = ReadConfiguration();
+            string emote = GetStringArg("actorEmote", string.Empty).Trim();
+            if (!IsSafeEmoteName(emote))
+            {
+                return Fail("actorEmote is required and must be at most 160 characters without control characters.");
+            }
+
+            JObject body = new JObject
+            {
+                ["name"] = emote
+            };
+            RequestResult result = SendJson(config, "/api/actors/" + Uri.EscapeDataString(config.ActorId) + "/emote/trigger", body);
+            PublishResult(result, null);
+            if (result.Success)
+            {
+                CPH.LogInfo("AS Adventurer actor emote triggered: " + config.ActorId + " -> " + emote);
+            }
+            return result.Success;
+        }
+        catch (Exception error)
+        {
+            return Fail(error.Message);
+        }
+    }
+
+    public bool ReleaseEmote()
+    {
+        try
+        {
+            ActorConfiguration config = ReadConfiguration();
+            RequestResult result = SendJson(config, "/api/actors/" + Uri.EscapeDataString(config.ActorId) + "/emote/release", null);
+            PublishResult(result, null);
+            if (result.Success)
+            {
+                CPH.LogInfo("AS Adventurer actor emote released: " + config.ActorId);
+            }
+            return result.Success;
+        }
+        catch (Exception error)
+        {
+            return Fail(error.Message);
+        }
+    }
+
+    public bool TriggerSubEmote()
+    {
+        try
+        {
+            ActorConfiguration config = ReadConfiguration();
+            string subEmote = GetStringArg("actorSubEmote", string.Empty).Trim();
+            if (!IsSafeSubEmotePath(subEmote))
+            {
+                return Fail("actorSubEmote is required. Use a slash-separated sub path with no more than 8 parts.");
+            }
+
+            JObject body = new JObject
+            {
+                ["name"] = subEmote
+            };
+            RequestResult result = SendJson(config, "/api/actors/" + Uri.EscapeDataString(config.ActorId) + "/emote/sub", body);
+            PublishResult(result, null);
+            if (result.Success)
+            {
+                CPH.LogInfo("AS Adventurer actor sub-emote triggered: " + config.ActorId + " -> " + subEmote);
+            }
+            return result.Success;
         }
         catch (Exception error)
         {
@@ -369,6 +458,36 @@ public class CPHInline
             || expression == "sad"
             || expression == "surprised"
             || expression == "eyes_closed";
+    }
+
+    private static bool IsSafeEmoteName(string value)
+    {
+        return !string.IsNullOrWhiteSpace(value)
+            && value.Length <= 160
+            && value.IndexOfAny(new[] { '\0', '\r', '\n', '\t' }) < 0;
+    }
+
+    private static bool IsSafeSubEmotePath(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > 1288)
+        {
+            return false;
+        }
+
+        string[] parts = value.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0 || parts.Length > 8)
+        {
+            return false;
+        }
+
+        foreach (string part in parts)
+        {
+            if (!IsSafeEmoteName(part.Trim()))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static string CreateSessionId(string actorId)
