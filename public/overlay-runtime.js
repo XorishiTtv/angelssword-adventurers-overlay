@@ -155,7 +155,7 @@
       return false;
     }
     next.count += 1;
-    sessionStorage.setItem(RECOVERY_STATE_KEY, JSON.stringify(next));
+    try { sessionStorage.setItem(RECOVERY_STATE_KEY, JSON.stringify(next)); } catch { /* storage can be disabled */ }
     console.warn(`[overlay-runtime] Reloading after recovery: ${reason}`);
     location.reload();
     return true;
