@@ -10,7 +10,13 @@ const MAX_SESSION_ID_LENGTH = 160;
 const DEFAULT_SPEAKING_TIMEOUT_MS = 45000;
 const MIN_SPEAKING_TIMEOUT_MS = 1000;
 const MAX_SPEAKING_TIMEOUT_MS = 5 * 60 * 1000;
+const SIGNED_ASSET_TTL_MS = 10 * 60 * 1000;
+const SIGNED_ASSET_MAX_FUTURE_MS = 15 * 60 * 1000;
+const MAX_ASSET_PATH_LENGTH = 500;
+const MAX_ASSET_PATH_DEPTH = 12;
 const ASSET_EXTENSIONS = ['.webm', '.webp', '.gif', '.png', '.mp4'];
+const SOUND_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.m4a'];
+const ALLOWED_ASSET_EXTENSIONS = new Set([...ASSET_EXTENSIONS, ...SOUND_EXTENSIONS]);
 const STATE_NAMES = [
   'neutral_idle', 'neutral_speaking',
   'happy_idle', 'happy_speaking',
@@ -41,6 +47,7 @@ function installActorMode(options = {}) {
   const runtimeStates = new Map();
   const speakingTimers = new Map();
   const actorClients = new Map();
+  const activeEmotes = new Map();
 
   function loadActors() {
     try {
@@ -76,6 +83,12 @@ function installActorMode(options = {}) {
     if (!record || !token || typeof record.tokenHash !== 'string') return false;
     const candidate = Buffer.from(hashToken(token), 'hex');
     const expected = Buffer.from(record.tokenHash, 'hex');
+    return candidate.length === expected.length && crypto.timingSafeEqual(candidate, expected);
+  }
+
+  function safeStringEqual(left, right) {
+    const candidate = Buffer.from(String(left || ''));
+    const expected = Buffer.from(String(right || ''));
     return candidate.length === expected.length && crypto.timingSafeEqual(candidate, expected);
   }
 
@@ -163,6 +176,19 @@ function installActorMode(options = {}) {
     return EXPRESSIONS.has(expression) ? expression : null;
   }
 
+  function sanitizeEmoteName(value) {
+    const name = String(value || '').trim();
+    if (!name || name.length > 160 || /[\u0000-\u001f\u007f]/.test(name)) return null;
+    return name;
+  }
+
+  function sanitizeSubPath(value) {
+    const parts = String(value || '').split('/').map(part => part.trim()).filter(Boolean);
+    if (!parts.length || parts.length > 8) return null;
+    if (parts.some(part => part.length > 160 || /[\u0000-\u001f\u007f]/.test(part))) return null;
+    return parts;
+  }
+
   function parseModelReference(value) {
     const raw = String(value || '').trim();
     const separator = raw.indexOf(':');
@@ -187,8 +213,8 @@ function installActorMode(options = {}) {
     return { ...parsed, root, directory: resolved };
   }
 
-  function findExistingFile(directory, baseName) {
-    for (const extension of ASSET_EXTENSIONS) {
+  function findExistingFile(directory, baseName, extensions = ASSET_EXTENSIONS) {
+    for (const extension of extensions) {
       const filePath = path.join(directory, `${baseName}${extension}`);
       try {
         if (fs.statSync(filePath).isFile()) return `${baseName}${extension}`;
@@ -268,6 +294,7 @@ function installActorMode(options = {}) {
       speaking: state.speaking,
       speechSessionId: state.speechSessionId,
       speakingExpiresAt: state.speakingExpiresAt,
+      activeEmote: activeEmotes.get(actor.id) || null,
       revision: state.revision,
       updatedAt: state.updatedAt
     };
@@ -369,8 +396,15 @@ function installActorMode(options = {}) {
     return getRuntimeState(actor);
   }
 
+  function releaseActorEmote(actor, broadcast = true) {
+    const existed = activeEmotes.delete(actor.id);
+    if (broadcast && existed) broadcastActor(actor.id, { type: 'emote', action: 'release', actorId: actor.id });
+    return existed;
+  }
+
   function resetActorState(actor) {
     clearSpeakingTimer(actor.id);
+    releaseActorEmote(actor);
     return commitRuntimeChange(actor, state => {
       state.expression = sanitizeExpression(actor.defaultExpression) || 'neutral';
       state.speaking = false;
@@ -383,8 +417,22 @@ function installActorMode(options = {}) {
     return relativePath.split('/').map(encodeURIComponent).join('/');
   }
 
+  function assetSignature(actor, modelReference, relativePath, expiresAt) {
+    return crypto
+      .createHmac('sha256', actor.tokenHash)
+      .update(`${actor.id}\n${modelReference}\n${relativePath}\n${expiresAt}`)
+      .digest('base64url');
+  }
+
   function actorAssetUrl(actor, token, modelReference, relativePath) {
-    const query = new URLSearchParams({ actor_token: token, model: modelReference });
+    const query = new URLSearchParams({ model: modelReference });
+    if (token) {
+      query.set('actor_token', token);
+    } else {
+      const expiresAt = Date.now() + SIGNED_ASSET_TTL_MS;
+      query.set('asset_expires', String(expiresAt));
+      query.set('asset_sig', assetSignature(actor, modelReference, relativePath, expiresAt));
+    }
     return `/actor-assets/${encodeURIComponent(actor.id)}/${encodeRelativePath(relativePath)}?${query.toString()}`;
   }
 
@@ -418,15 +466,228 @@ function installActorMode(options = {}) {
     return result;
   }
 
+  function scanVariants(directory, baseNames, extensions, makeUrl, maxVariants = 20) {
+    const variants = [];
+    let activeBase = null;
+    for (const baseName of baseNames) {
+      const found = findExistingFile(directory, baseName, extensions);
+      if (!found) continue;
+      activeBase = baseName;
+      variants.push(makeUrl(found));
+      break;
+    }
+    if (!activeBase) return variants;
+    for (let index = 2; index <= maxVariants; index++) {
+      const found = findExistingFile(directory, `${activeBase}${index}`, extensions);
+      if (!found) break;
+      variants.push(makeUrl(found));
+    }
+    return variants;
+  }
+
+  function scanSoundVariants(directory, baseNames, extensions, makeUrl, maxVariants = 20) {
+    const variants = [];
+    let activeBase = null;
+    for (const baseName of baseNames) {
+      const found = findExistingFile(directory, baseName, extensions);
+      if (!found) continue;
+      activeBase = baseName;
+      variants.push(makeUrl(found));
+      break;
+    }
+    if (!activeBase) return variants;
+    const parts = activeBase.split('_');
+    for (let index = 2; index <= maxVariants; index++) {
+      const firstName = `${activeBase}${index}`;
+      const secondName = parts.length >= 2 ? `${parts[0]}${index}_${parts.slice(1).join('_')}` : null;
+      const first = findExistingFile(directory, firstName, extensions);
+      const second = secondName ? findExistingFile(directory, secondName, extensions) : null;
+      const found = first || second;
+      if (!found) break;
+      variants.push(makeUrl(found));
+    }
+    return variants;
+  }
+
+  function scanActorSubs(actor, token, parentDir, parentRelative, depth = 0) {
+    if (depth >= 5) return [];
+    const subsDir = path.join(parentDir, 'subs');
+    if (!fs.existsSync(subsDir)) return [];
+    const result = [];
+
+    for (const entry of fs.readdirSync(subsDir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      if (!entry.isDirectory()) continue;
+      const subDir = path.join(subsDir, entry.name);
+      const subRelative = parentRelative ? `${parentRelative}/subs/${entry.name}` : `subs/${entry.name}`;
+      const makeUrl = fileName => actorAssetUrl(actor, token, actor.activeModel, `${subRelative}/${fileName}`);
+      const files = {};
+
+      const idle = findExistingFile(subDir, 'idle');
+      if (idle) files.idle = makeUrl(idle);
+      for (const speakingName of ['speaking', 'idle_speaking']) {
+        const speaking = findExistingFile(subDir, speakingName);
+        if (speaking) {
+          files.speaking = makeUrl(speaking);
+          break;
+        }
+      }
+
+      const animations = scanVariants(subDir, ['animation', 'intro'], ASSET_EXTENSIONS, makeUrl);
+      if (animations.length) {
+        files.animation = animations[0];
+        if (animations.length > 1) files.animation_variants = animations;
+      }
+      const outros = scanVariants(subDir, ['outro'], ASSET_EXTENSIONS, makeUrl);
+      if (outros.length) {
+        files.outro = outros[0];
+        if (outros.length > 1) files.outro_variants = outros;
+      }
+      const sounds = scanSoundVariants(subDir, ['intro_sound', 'sound'], SOUND_EXTENSIONS, makeUrl);
+      if (sounds.length) {
+        files.sound = sounds[0];
+        if (sounds.length > 1) files.sound_variants = sounds;
+      }
+      const outroSounds = scanSoundVariants(subDir, ['outro_sound'], SOUND_EXTENSIONS, makeUrl);
+      if (outroSounds.length) {
+        files.outro_sound = outroSounds[0];
+        if (outroSounds.length > 1) files.outro_sound_variants = outroSounds;
+      }
+      const idleSound = findExistingFile(subDir, 'idle_sound', SOUND_EXTENSIONS);
+      if (idleSound) files.idle_sound = makeUrl(idleSound);
+
+      if (files.animation || files.idle) {
+        result.push({
+          name: entry.name,
+          files,
+          subs: scanActorSubs(actor, token, subDir, subRelative, depth + 1)
+        });
+      }
+    }
+    return result;
+  }
+
+  function scanActorEmotes(actor, token = null) {
+    const model = modelDirectory(actor.machineId, actor.activeModel);
+    if (!model || !fs.existsSync(model.directory)) return [];
+    const emotesDirectory = path.join(model.directory, 'emotes');
+    if (!fs.existsSync(emotesDirectory)) return [];
+    const emotes = [];
+
+    for (const entry of fs.readdirSync(emotesDirectory, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      if (!entry.isDirectory()) continue;
+      const emoteDir = path.join(emotesDirectory, entry.name);
+      const emoteRelative = `emotes/${entry.name}`;
+      const makeUrl = fileName => actorAssetUrl(actor, token, actor.activeModel, `${emoteRelative}/${fileName}`);
+      const files = {};
+
+      for (const baseName of ['animation', 'intro', 'idle', 'speaking', 'outro']) {
+        const found = findExistingFile(emoteDir, baseName);
+        if (found) files[baseName] = makeUrl(found);
+      }
+
+      const introVariants = scanVariants(emoteDir, ['intro'], ASSET_EXTENSIONS, makeUrl);
+      if (introVariants.length > 1) files.intro_variants = introVariants;
+      const outroVariants = scanVariants(emoteDir, ['outro'], ASSET_EXTENSIONS, makeUrl);
+      if (outroVariants.length > 1) files.outro_variants = outroVariants;
+
+      for (const soundBase of ['intro_sound', 'outro_sound', 'animation_sound']) {
+        const found = findExistingFile(emoteDir, soundBase, SOUND_EXTENSIONS);
+        if (found) files[soundBase] = makeUrl(found);
+        const variants = scanSoundVariants(emoteDir, [soundBase], SOUND_EXTENSIONS, makeUrl);
+        if (variants.length > 1) files[`${soundBase}_variants`] = variants;
+      }
+      const idleSound = findExistingFile(emoteDir, 'idle_sound', SOUND_EXTENSIONS);
+      if (idleSound) files.idle_sound = makeUrl(idleSound);
+
+      const emoteType = files.animation ? 1 : (files.idle ? 2 : null);
+      if (emoteType !== null) {
+        emotes.push({
+          name: entry.name,
+          emoteType,
+          files,
+          subs: scanActorSubs(actor, token, emoteDir, emoteRelative)
+        });
+      }
+    }
+    return emotes;
+  }
+
+  function emoteCatalogItem(item) {
+    return {
+      name: item.name,
+      ...(item.emoteType ? { emoteType: item.emoteType } : {}),
+      subs: (item.subs || []).map(emoteCatalogItem)
+    };
+  }
+
+  function emoteCatalog(actor) {
+    return scanActorEmotes(actor, null).map(emoteCatalogItem);
+  }
+
+  function findActorEmote(actor, name, token = null) {
+    const safeName = sanitizeEmoteName(name);
+    if (!safeName) return null;
+    return scanActorEmotes(actor, token).find(item => item.name === safeName) || null;
+  }
+
+  function findSubEmote(emote, value) {
+    const parts = sanitizeSubPath(value);
+    if (!parts) return null;
+    let currentSubs = emote.subs || [];
+    let sub = null;
+    for (const part of parts) {
+      sub = currentSubs.find(item => item.name === part);
+      if (!sub) return null;
+      currentSubs = sub.subs || [];
+    }
+    return sub;
+  }
+
+  function triggerActorEmote(actor, name, token = null) {
+    const emote = findActorEmote(actor, name, token);
+    if (!emote) return null;
+    activeEmotes.set(actor.id, emote.name);
+    broadcastActor(actor.id, { type: 'emote', action: 'trigger', name: emote.name, emote, actorId: actor.id });
+    broadcastActor(actor.id, { type: 'actor_state', actor: publicActor(actor) });
+    return emote;
+  }
+
+  function triggerActorSub(actor, name, token = null) {
+    const activeName = activeEmotes.get(actor.id);
+    if (!activeName) return { error: 'no emote is active for this actor' };
+    const emote = findActorEmote(actor, activeName, token);
+    if (!emote) {
+      activeEmotes.delete(actor.id);
+      return { error: 'active emote is no longer available for this actor model' };
+    }
+    const sub = findSubEmote(emote, name);
+    if (!sub) return { error: 'sub-animation not found for the active actor emote' };
+    broadcastActor(actor.id, { type: 'emote', action: 'sub', sub, parentEmote: emote.name, actorId: actor.id });
+    return { emote, sub };
+  }
+
   function sanitizeAssetRelativePath(value) {
     const raw = String(value || '').replace(/\\/g, '/').replace(/^\/+/, '');
-    if (!raw || raw.length > 500 || raw.includes('\0')) return null;
+    if (!raw || raw.length > MAX_ASSET_PATH_LENGTH || raw.includes('\0')) return null;
     const parts = raw.split('/');
-    if (parts.length > 4 || parts.some(part => !part || part === '.' || part === '..')) return null;
+    if (parts.length > MAX_ASSET_PATH_DEPTH || parts.some(part => !part || part === '.' || part === '..')) return null;
     if (parts.some(part => /[\u0000-\u001f\u007f:*?"<>|]/.test(part))) return null;
     const extension = path.extname(parts[parts.length - 1]).toLowerCase();
-    if (!ASSET_EXTENSIONS.includes(extension)) return null;
+    if (!ALLOWED_ASSET_EXTENSIONS.has(extension)) return null;
     return parts.join('/');
+  }
+
+  function authenticateActorAsset(req, actor, modelReference, relativePath) {
+    if (tokenMatches(actor, actorToken(req))) return true;
+
+    const expiresAt = Number(req.query.asset_expires);
+    const signature = String(req.query.asset_sig || '');
+    const now = Date.now();
+    if (!Number.isSafeInteger(expiresAt) || expiresAt < now || expiresAt > now + SIGNED_ASSET_MAX_FUTURE_MS || !signature) {
+      return false;
+    }
+    const expected = assetSignature(actor, modelReference, relativePath, expiresAt);
+    return safeStringEqual(signature, expected);
   }
 
   function installRoutes(app) {
@@ -510,6 +771,7 @@ function installActorMode(options = {}) {
 
       if (modelChanged) {
         clearSpeakingTimer(actor.id);
+        releaseActorEmote(actor);
         runtimeStates.delete(actor.id);
         broadcastActor(actor.id, { type: 'model_change', model: actor.activeModel, actorId: actor.id });
         setTimeout(() => broadcastState(actor), 0);
@@ -523,6 +785,7 @@ function installActorMode(options = {}) {
       const { actor } = owned;
 
       clearSpeakingTimer(actor.id);
+      releaseActorEmote(actor);
       runtimeStates.delete(actor.id);
       const clients = actorClients.get(actor.id);
       if (clients) {
@@ -540,6 +803,7 @@ function installActorMode(options = {}) {
       const owned = authenticateOwnedActor(req, res);
       if (!owned) return;
       const { actor } = owned;
+      releaseActorEmote(actor);
       const token = crypto.randomBytes(32).toString('base64url');
       actor.tokenHash = hashToken(token);
       actor.updatedAt = new Date().toISOString();
@@ -589,6 +853,40 @@ function installActorMode(options = {}) {
       const { actor } = owned;
       resetActorState(actor);
       return res.json({ success: true, actor: publicActor(actor) });
+    });
+
+    app.get('/api/actors/:actorId/manage/emotes', (req, res) => {
+      const owned = authenticateOwnedActor(req, res);
+      if (!owned) return;
+      const { actor } = owned;
+      return res.json({ emotes: emoteCatalog(actor), activeEmote: activeEmotes.get(actor.id) || null });
+    });
+
+    app.post('/api/actors/:actorId/manage/emote/trigger', (req, res) => {
+      const owned = authenticateOwnedActor(req, res);
+      if (!owned) return;
+      const { actor } = owned;
+      const emote = triggerActorEmote(actor, req.body?.name, null);
+      if (!emote) return res.status(404).json({ error: 'emote not found for this actor model' });
+      return res.json({ success: true, emote: emoteCatalogItem(emote), actor: publicActor(actor) });
+    });
+
+    app.post('/api/actors/:actorId/manage/emote/release', (req, res) => {
+      const owned = authenticateOwnedActor(req, res);
+      if (!owned) return;
+      const { actor } = owned;
+      releaseActorEmote(actor);
+      broadcastActor(actor.id, { type: 'actor_state', actor: publicActor(actor) });
+      return res.json({ success: true, actor: publicActor(actor) });
+    });
+
+    app.post('/api/actors/:actorId/manage/emote/sub', (req, res) => {
+      const owned = authenticateOwnedActor(req, res);
+      if (!owned) return;
+      const { actor } = owned;
+      const result = triggerActorSub(actor, req.body?.name, null);
+      if (result.error) return res.status(400).json({ error: result.error });
+      return res.json({ success: true, sub: emoteCatalogItem(result.sub), actor: publicActor(actor) });
     });
 
     app.get('/api/actors/:actorId/state', (req, res) => {
@@ -641,6 +939,39 @@ function installActorMode(options = {}) {
       return res.json({ success: true, actor: publicActor(actor) });
     });
 
+    app.get('/api/actors/:actorId/emotes', (req, res) => {
+      const actor = authenticateActor(req, res);
+      if (!actor) return;
+      return res.json({
+        emotes: scanActorEmotes(actor, actorToken(req)),
+        activeEmote: activeEmotes.get(actor.id) || null
+      });
+    });
+
+    app.post('/api/actors/:actorId/emote/trigger', (req, res) => {
+      const actor = authenticateActor(req, res);
+      if (!actor) return;
+      const emote = triggerActorEmote(actor, req.body?.name, actorToken(req));
+      if (!emote) return res.status(404).json({ error: 'emote not found for this actor model' });
+      return res.json({ success: true, emote, actor: publicActor(actor) });
+    });
+
+    app.post('/api/actors/:actorId/emote/release', (req, res) => {
+      const actor = authenticateActor(req, res);
+      if (!actor) return;
+      releaseActorEmote(actor);
+      broadcastActor(actor.id, { type: 'actor_state', actor: publicActor(actor) });
+      return res.json({ success: true, actor: publicActor(actor) });
+    });
+
+    app.post('/api/actors/:actorId/emote/sub', (req, res) => {
+      const actor = authenticateActor(req, res);
+      if (!actor) return;
+      const result = triggerActorSub(actor, req.body?.name, actorToken(req));
+      if (result.error) return res.status(400).json({ error: result.error });
+      return res.json({ success: true, sub: result.sub, actor: publicActor(actor) });
+    });
+
     app.get('/api/actors/:actorId/assets', (req, res) => {
       const actor = authenticateActor(req, res);
       if (!actor) return;
@@ -648,13 +979,14 @@ function installActorMode(options = {}) {
     });
 
     app.get('/actor-assets/:actorId/*', (req, res) => {
-      const actor = authenticateActor(req, res);
-      if (!actor) return;
+      const actor = findActor(req.params.actorId);
+      if (!actor) return res.status(401).end();
       const requestedModel = String(req.query.model || '');
       if (requestedModel !== actor.activeModel) return res.status(409).json({ error: 'actor model changed; refresh the overlay' });
       const model = modelDirectory(actor.machineId, actor.activeModel);
       const relative = sanitizeAssetRelativePath(req.params[0]);
       if (!model || !relative) return res.status(400).end();
+      if (!authenticateActorAsset(req, actor, requestedModel, relative)) return res.status(401).end();
       const resolved = path.resolve(model.directory, relative);
       if (resolved !== model.directory && !resolved.startsWith(`${model.directory}${path.sep}`)) return res.status(403).end();
       try {
@@ -715,7 +1047,21 @@ function installActorMode(options = {}) {
       if (clients.size === 0) actorClients.delete(actor.id);
     });
 
-    const bootstrap = setTimeout(() => broadcastState(actor), 25);
+    const bootstrap = setTimeout(() => {
+      broadcastState(actor);
+      const activeName = activeEmotes.get(actor.id);
+      if (!activeName || socket.readyState !== 1) return;
+      const emote = findActorEmote(actor, activeName, null);
+      if (emote) {
+        socket._asNativeSend(JSON.stringify({
+          type: 'emote',
+          action: 'trigger',
+          name: emote.name,
+          emote,
+          actorId: actor.id
+        }));
+      }
+    }, 25);
     bootstrap.unref?.();
   }
 
@@ -724,7 +1070,7 @@ function installActorMode(options = {}) {
     attachSocket,
     getActorCount: () => actorsDocument.actors.length
   };
-  console.log('  AI Actor MVP enabled (actor-scoped API and OBS overlays).');
+  console.log('  AI Actor mode enabled (actor-scoped state, emotes, assets, and OBS overlays).');
   return installedApi;
 }
 
