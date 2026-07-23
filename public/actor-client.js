@@ -105,6 +105,14 @@
     return result;
   }
 
+  // The shared renderer parses WebSocket payloads with JSON.parse(). Rewrite
+  // actor media URLs there too, so signed query parameters do not hide the
+  // actual file extension from its video/image detection.
+  const nativeJsonParse = JSON.parse.bind(JSON);
+  JSON.parse = function actorJsonParse(text, reviver) {
+    return rewriteAssetUrls(nativeJsonParse(text, reviver));
+  };
+
   async function actorAssetsResponse(init) {
     const actorAssets = authenticatedActorUrl(`/api/actors/${encodeURIComponent(credentials.actorId)}/assets`);
     const response = await nativeFetch(actorAssets.toString(), init);
