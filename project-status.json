@@ -1,0 +1,142 @@
+{
+  "schema_version": "1.0.0",
+  "project": "AS Adventurer",
+  "repository": "XorishiTtv/angelssword-adventurers-overlay",
+  "updated_at": "2026-07-24",
+  "active_work": {
+    "phase": "Phase 2 - AI Actors",
+    "branch": "agent/ai-actors-control-panel",
+    "base_branch": "agent/lan-mode",
+    "pull_request": 8,
+    "pull_request_state": "draft",
+    "release_state": "implementation-complete-release-validation-pending"
+  },
+  "completed": [
+    {
+      "id": "secure-lan-mode",
+      "title": "Secure LAN mode",
+      "status": "complete-on-integration-branch",
+      "details": [
+        "HTTPS and secure WebSocket launcher for trusted private networks",
+        "Machine registration and token-authenticated machine ownership",
+        "Shared read-only global models and isolated private machine assets",
+        "Authenticated OBS URLs and Windows certificate setup",
+        "LAN-enabled release builder"
+      ]
+    },
+    {
+      "id": "ai-actor-management",
+      "title": "AI Actor management",
+      "status": "complete",
+      "details": [
+        "Create, list, rename, reconfigure, reset, and delete actors",
+        "One-time actor token and OBS URL issuance",
+        "Actor-scoped expression, speaking, model, and connection state",
+        "Machine-owner controls that do not expose actor tokens"
+      ]
+    },
+    {
+      "id": "actor-emotes",
+      "title": "Actor emotes",
+      "status": "complete",
+      "details": [
+        "Type 1 one-shot and Type 2 held emotes",
+        "Intro, idle, speaking, outro, sound, and variant support",
+        "Slash-separated nested sub-animation support",
+        "Actor-scoped short-lived signed media URLs for owner controls",
+        "Actor-token trigger, release, catalog, and sub-emote endpoints"
+      ]
+    },
+    {
+      "id": "streamerbot-helper",
+      "title": "Reusable Streamer.bot helper",
+      "status": "complete-and-live-tested",
+      "details": [
+        "StartTts, StopTts, SetExpression, ResetActor, TriggerEmote, ReleaseEmote, and TriggerSubEmote",
+        "Generated or supplied speech session IDs",
+        "Cross-action non-persisted session storage",
+        "Stale-session protection",
+        "Private-LAN and TLS destination validation",
+        "No actor-token logging or helper-created token globals"
+      ]
+    },
+    {
+      "id": "overlay-performance-recovery",
+      "title": "Overlay performance and recovery",
+      "status": "complete-and-observationally-tested",
+      "details": [
+        "Bounded retry for transient asset requests",
+        "Inactive and hidden video pausing",
+        "Removed media detachment for earlier resource release",
+        "Bounded empty-overlay self-recovery",
+        "Actor model replay on reconnect",
+        "Held Type 2 emote restoration after transient socket interruption"
+      ]
+    },
+    {
+      "id": "signed-media-playback-fix",
+      "title": "Signed actor media playback compatibility",
+      "status": "complete-and-live-tested",
+      "details": [
+        "Actor WebSocket media URLs retain an extension hint for renderer type detection",
+        "Signed query parameters and authentication remain unchanged"
+      ]
+    }
+  ],
+  "validation": [
+    {
+      "id": "main-and-actor-overlays",
+      "status": "passed",
+      "details": "Main and actor overlays rendered in a browser and OBS using https://localhost:3000."
+    },
+    {
+      "id": "actor-emote-playback",
+      "status": "passed",
+      "details": "Type 2 trigger, nested sub-animation, and release were exercised successfully."
+    },
+    {
+      "id": "streamerbot-compilation",
+      "status": "passed",
+      "details": "The helper compiled in Streamer.bot and all seven named methods were discoverable."
+    },
+    {
+      "id": "streamerbot-methods",
+      "status": "passed",
+      "details": "Expression, start, stop, reset, emote, sub-emote, release, cross-action session lookup, and stale-session protection were exercised successfully."
+    },
+    {
+      "id": "reconnect-and-recovery",
+      "status": "passed-observationally",
+      "details": "Overlay reconnection and recovery behavior was exercised successfully in the live setup."
+    },
+    {
+      "id": "packaged-windows-release",
+      "status": "pending",
+      "details": "A full LAN-enabled Windows package and clean-folder smoke test remain."
+    }
+  ],
+  "known_limits": [
+    {
+      "id": "process-restart-held-emote",
+      "details": "Held emote state is in memory. A full LAN process restart cannot restore a held emote that existed before the process stopped."
+    },
+    {
+      "id": "performance-benchmark",
+      "details": "Hidden and inactive media behavior was observed working, but no quantitative CPU or GPU benchmark has been recorded."
+    },
+    {
+      "id": "merge-state",
+      "details": "Phase 2 remains on a draft pull request and is not merged into agent/lan-mode or main."
+    }
+  ],
+  "security": {
+    "do_not_store": [
+      "machine tokens",
+      "actor tokens",
+      "complete authenticated OBS URLs",
+      "certificate private keys",
+      "certificate passwords"
+    ],
+    "note": "Status and documentation files must contain examples only and must never contain live credentials."
+  }
+}
