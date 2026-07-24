@@ -30,7 +30,19 @@ The helper uses Streamer.bot's built-in `Newtonsoft.Json` dependency and .NET `H
 3. Set its **Name** to `AS Adventurer Actor Helper` so it can be selected by **Execute C# Method** sub-actions.
 4. Paste the complete contents of `streamerbot/ASAdventurerActorHelper.cs` into the editor.
 5. Select **Find Refs**, then **Compile**.
-6. Enable **Precompile on Application Start** after the first successful compile.
+6. Confirm these methods appear in **Execute C# Method**:
+
+```text
+StartTts
+StopTts
+SetExpression
+ResetActor
+TriggerEmote
+ReleaseEmote
+TriggerSubEmote
+```
+
+7. Enable **Precompile on Application Start** after the first successful compile.
 
 The helper is designed for Streamer.bot's standard `CPHInline` class. The `EXTERNAL_EDITOR` branch is included only for users editing with the Streamer.bot Visual Studio Code project template.
 
@@ -63,6 +75,8 @@ asActorTokenBotFour
 
 Treat Streamer.bot's data folder and backups as sensitive because persisted globals can contain the raw token. The helper itself never writes actor tokens to arguments, globals, response output, or logs.
 
+Never copy a live token, complete actor OBS URL, or persisted-global value into repository documentation or project status files.
+
 ## Start TTS
 
 Optional arguments for `StartTts()`:
@@ -79,10 +93,10 @@ Recommended action sequence:
 Set actorBaseUrl
 Set actorId
 Load actorToken from a persisted global
-Set actorExpression
+Set actorExpression when needed
 Set actorExpiresInMs
 Execute C# Method -> StartTts
-Run the actor's TTS sub-action
+Run the actor's TTS playback sub-action
 Execute C# Method -> StopTts
 ```
 
@@ -98,7 +112,34 @@ That allows a separate TTS-finished action to call `StopTts()` without manually 
 
 Call `StopTts()` after the TTS action finishes.
 
-The helper uses `actorSpeechSessionId` when present. Otherwise, it reads the actor's current non-persisted session global. A delayed stop for an older session remains safe: the server returns `stale: true`, the current speaking session continues, and the helper does not clear the newer stored session.
+The helper uses `actorSpeechSessionId` when present. Otherwise, it reads the actor's current non-persisted session global.
+
+A delayed stop for an older session remains safe: the server returns `stale: true`, the current speaking session continues, and the helper does not clear the newer stored session.
+
+When no supplied or stored session ID exists, `StopTts()` fails locally with status code `0` and an explanatory `actorRequestError`. No HTTP request is sent in that case.
+
+## Production TTS integration
+
+For each production TTS identity, maintain a configuration that resolves to:
+
+- the actor ID;
+- the persisted global containing that actor's token;
+- an optional expression; and
+- an optional speaking timeout.
+
+The safe production order is:
+
+```text
+Resolve TTS identity to actor configuration
+Set actorBaseUrl, actorId, and actorToken
+Call StartTts
+Play or await the generated audio
+Call StopTts using the matching session
+```
+
+Use a cleanup or completion path that calls `StopTts()` after playback errors as well as successful playback. The server's stale-session protection prevents an older cleanup call from stopping a newer speech session for the same actor.
+
+Non-actor TTS identities should continue through the existing non-actor overlay path.
 
 ## Set expression only
 
@@ -150,11 +191,13 @@ For deeper nesting:
 actorSubEmote = menu/confirm
 ```
 
-A sub-animation request fails when no parent emote is active or the path does not exist under the active emote.
+A control-panel label such as `menu › confirm` maps to `menu/confirm` in `actorSubEmote`.
+
+Do not include `subs/`, the parent emote folder, media filenames, or Windows backslashes. A sub-animation request fails when no parent Type 2 emote is active or the path does not exist under the active emote.
 
 ## Reset
 
-Call `ResetActor()` to return the actor to its configured default expression, idle state, and no active emote. The helper also clears the actor's stored non-persisted speech session.
+Call `ResetActor()` to return the actor to its configured default expression, idle state, and no active emote. The helper also clears the actor's stored non-persisted speech session after a successful reset.
 
 ## Command-dispatch mode
 
@@ -181,17 +224,67 @@ Every request populates:
 | Argument | Type | Meaning |
 |---|---|---|
 | `actorRequestSuccess` | bool | Request completed with an HTTP success status |
-| `actorRequestStatusCode` | int | HTTP response code, or `0` for local validation/connection failures |
+| `actorRequestStatusCode` | int | HTTP response code, or `0` for local validation or connection failures |
 | `actorRequestResponse` | string | Raw server response body; never contains the submitted token |
 | `actorRequestError` | string | Parsed error message when unsuccessful |
 | `actorRequestStale` | bool | An old stop request was safely ignored |
-| `actorSpeechSessionId` | string | Generated or supplied session ID for start/stop coordination |
+| `actorSpeechSessionId` | string | Generated or supplied session ID for start and stop coordination |
 
 Enable **Save Result to Variable** on the Streamer.bot C# sub-action when later sub-actions should continue even after a helper method returns `false`.
 
+A normal successful request reports:
+
+```text
+actorMethodResult = True
+actorRequestSuccess = True
+actorRequestStatusCode = 200
+actorRequestError = empty
+```
+
+A stale stop is still an accepted HTTP request:
+
+```text
+actorMethodResult = True
+actorRequestSuccess = True
+actorRequestStatusCode = 200
+actorRequestStale = True
+```
+
+The actor remains speaking because the stop belonged to an older session.
+
 ## Four-bot layout
 
-Create one small configuration block per bot that sets its `actorId` and loads its token. All bots can call the same compiled helper code. Speech-session globals and actor-emote state are actor-scoped, so one bot's TTS or emote action does not control another bot.
+Create one small configuration block per bot that sets its `actorId` and loads its token. All bots can call the same compiled helper code.
+
+Speech-session globals and actor-emote state are actor-scoped, so one bot's TTS or emote action does not control another bot.
+
+Recommended configuration fields per bot:
+
+```text
+TTS identity
+actorId
+persisted actor-token global name
+default or event-specific expression
+optional default emote
+```
+
+## Live validation checklist
+
+The helper has been live-tested successfully for:
+
+- compilation and discovery of all seven named methods;
+- expression changes;
+- start and stop speaking;
+- generated session IDs;
+- cross-action session lookup;
+- stale-session protection using two explicit session IDs;
+- Type 2 emote trigger;
+- nested sub-animation trigger;
+- emote release;
+- actor reset; and
+- reset cleanup of expression, speaking state, and active emote.
+
+For a new installation, repeat this minimum smoke test with one non-production actor before connecting the helper to the production TTS workflow.
 
 ## Troubleshooting
 
@@ -211,6 +304,10 @@ Confirm the actor's selected model contains `emotes/<actorEmote>/` and a valid T
 
 Call `TriggerEmote()` for the parent Type 2 emote before calling `TriggerSubEmote()`.
 
+### `sub-animation not found for the active actor emote`
+
+Use the exact slash-separated path shown by the control panel. Confirm it exists below the active parent emote's `subs` directory.
+
 ### Stop says no active session
 
 Call `StartTts()` first, pass the original `actorSpeechSessionId`, or ensure the start and stop actions use the same actor ID.
@@ -218,3 +315,11 @@ Call `StartTts()` first, pass the original `actorSpeechSessionId`, or ensure the
 ### HTTP 404
 
 Confirm `actorBaseUrl` contains only the origin, such as `https://localhost:3000`, and that the actor has not been deleted.
+
+### HTTP 400 from a sub-emote request
+
+The helper reached the actor API, but the active parent emote or submitted sub path is invalid. Trigger the intended Type 2 parent first and use the exact catalog path.
+
+## Project tracking
+
+Completed validation and remaining release work are recorded in `project-status.json`, `next-steps.json`, `PROJECT_STATUS.md`, and `CHANGELOG.md`.
