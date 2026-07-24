@@ -1,0 +1,140 @@
+{
+  "schema_version": "1.0.0",
+  "project": "AS Adventurer",
+  "updated_at": "2026-07-24",
+  "source_status_file": "project-status.json",
+  "status_values": [
+    "next",
+    "planned",
+    "in-progress",
+    "blocked",
+    "complete",
+    "deferred"
+  ],
+  "items": [
+    {
+      "order": 1,
+      "id": "production-tts-integration",
+      "title": "Connect actor helper calls to the production TTS workflow",
+      "status": "next",
+      "requires_repository_code_change": false,
+      "acceptance_criteria": [
+        "Each supported TTS identity resolves to the intended actor ID and token variable",
+        "StartTts runs before audio playback",
+        "StopTts runs after playback completion or cleanup",
+        "A delayed stop from an older playback cannot stop a newer session",
+        "Non-actor TTS users continue using the existing overlay behavior"
+      ],
+      "notes": "Keep raw actor tokens in Streamer.bot persisted globals, not in repository files."
+    },
+    {
+      "order": 2,
+      "id": "end-to-end-multi-actor-tts-test",
+      "title": "Run an end-to-end multi-actor TTS test",
+      "status": "planned",
+      "blocked_by": [
+        "production-tts-integration"
+      ],
+      "acceptance_criteria": [
+        "Every configured AI voice activates only its assigned actor",
+        "Speaking starts before audible playback and returns to idle afterward",
+        "Expressions and emotes remain actor-scoped",
+        "Back-to-back requests preserve stale-session protection"
+      ]
+    },
+    {
+      "order": 3,
+      "id": "packaged-windows-build",
+      "title": "Build the LAN-enabled Windows release",
+      "status": "planned",
+      "command": "npm run build-release:lan",
+      "acceptance_criteria": [
+        "The standard and LAN executables build successfully",
+        "The release ZIP is created",
+        "LAN setup, actor, and Streamer.bot documentation are present",
+        "The Streamer.bot helper source is present"
+      ]
+    },
+    {
+      "order": 4,
+      "id": "clean-folder-smoke-test",
+      "title": "Smoke-test the packaged release from a clean folder",
+      "status": "blocked",
+      "blocked_by": [
+        "packaged-windows-build"
+      ],
+      "acceptance_criteria": [
+        "Certificate setup completes",
+        "Existing machine-data can be restored from backup",
+        "Main and actor OBS URLs render",
+        "Model and emote assets load",
+        "LAN restart recovery works",
+        "Streamer.bot can reach the actor API"
+      ]
+    },
+    {
+      "order": 5,
+      "id": "pr-8-release-gate",
+      "title": "Update PR #8 after release validation",
+      "status": "blocked",
+      "blocked_by": [
+        "end-to-end-multi-actor-tts-test",
+        "clean-folder-smoke-test"
+      ],
+      "acceptance_criteria": [
+        "Remaining validation items are documented accurately",
+        "The pull request is marked ready only with explicit owner approval"
+      ]
+    },
+    {
+      "order": 6,
+      "id": "merge-pr-8",
+      "title": "Merge Phase 2 into agent/lan-mode",
+      "status": "blocked",
+      "blocked_by": [
+        "pr-8-release-gate"
+      ],
+      "requires_explicit_owner_approval": true
+    },
+    {
+      "order": 7,
+      "id": "combined-lan-regression",
+      "title": "Retest the combined LAN integration branch",
+      "status": "blocked",
+      "blocked_by": [
+        "merge-pr-8"
+      ],
+      "acceptance_criteria": [
+        "Localhost mode remains unchanged",
+        "Secure LAN machine registration and private assets work",
+        "AI Actors and Streamer.bot controls work",
+        "OBS main and actor sources recover after restart"
+      ]
+    },
+    {
+      "order": 8,
+      "id": "merge-pr-1",
+      "title": "Promote secure LAN mode to main",
+      "status": "blocked",
+      "blocked_by": [
+        "combined-lan-regression"
+      ],
+      "requires_explicit_owner_approval": true
+    },
+    {
+      "order": 9,
+      "id": "quantitative-performance-baseline",
+      "title": "Record an optional OBS CPU and GPU baseline",
+      "status": "planned",
+      "acceptance_criteria": [
+        "Record active, inactive, and hidden browser-source measurements",
+        "Document OBS visibility settings used during the measurement"
+      ],
+      "notes": "This is useful evidence but is not currently required to prove functional correctness."
+    }
+  ],
+  "maintenance": {
+    "rule": "When an item is completed, record the result in project-status.json, remove or mark the roadmap item complete, update updated_at in both files, and add a concise CHANGELOG.md entry.",
+    "security": "Never place live tokens, authenticated OBS URLs, or certificate secrets in roadmap files."
+  }
+}
