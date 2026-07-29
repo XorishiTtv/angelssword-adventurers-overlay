@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.0.0",
+  "project": "AS Adventurer",
+  "repository": "XorishiTtv/angelssword-adventurers-overlay",
+  "updated_at": "2026-07-29",
+  "active_checkout": {
+    "remote": "origin",
+    "branch": "agent/ai-actors-control-panel",
+    "base_branch": "agent/lan-mode",
+    "pull_request": 8,
+    "expected_head_ref": "origin/agent/ai-actors-control-panel",
+    "expected_base_ref": "origin/agent/lan-mode",
+    "expected_head_rule": "After fetch and fast-forward update, local HEAD must equal origin/agent/ai-actors-control-panel.",
+    "expected_base_rule": "origin/agent/lan-mode must be an ancestor of local HEAD."
+  },
+  "github_snapshot": {
+    "observed_at": "2026-07-29T09:10:00-04:00",
+    "pull_request_state": "open",
+    "draft": true,
+    "mergeable": true,
+    "reported_commit_status_contexts": 0,
+    "reported_commit_status": "none-reported",
+    "note": "GitHub reported no commit status contexts for the observed PR head. Local repository checks remain required."
+  },
+  "local_checks": [
+    {
+      "id": "working-branch",
+      "command": "git branch --show-current",
+      "expected": "agent/ai-actors-control-panel"
+    },
+    {
+      "id": "expected-head",
+      "command": "git rev-parse HEAD && git rev-parse origin/agent/ai-actors-control-panel",
+      "expected": "Both commands print the same SHA."
+    },
+    {
+      "id": "ahead-behind",
+      "command": "git rev-list --left-right --count HEAD...origin/agent/ai-actors-control-panel",
+      "expected": "0 0"
+    },
+    {
+      "id": "clean-worktree",
+      "command": "git status --short",
+      "expected": "No output."
+    },
+    {
+      "id": "base-ancestry",
+      "command": "git merge-base --is-ancestor origin/agent/lan-mode HEAD",
+      "expected": "Exit code 0."
+    },
+    {
+      "id": "project-records",
+      "command": "npm run status:check",
+      "expected": "All checks pass."
+    }
+  ],
+  "commands": {
+    "fresh_checkout": [
+      "git clone https://github.com/XorishiTtv/angelssword-adventurers-overlay.git",
+      "cd angelssword-adventurers-overlay",
+      "git fetch --prune origin",
+      "git switch --track -c agent/ai-actors-control-panel origin/agent/ai-actors-control-panel",
+      "npm install",
+      "npm run status:check"
+    ],
+    "update_existing_checkout": [
+      "git status --short",
+      "git fetch --prune origin",
+      "git switch agent/ai-actors-control-panel",
+      "git pull --ff-only origin agent/ai-actors-control-panel",
+      "npm install",
+      "npm run status:check"
+    ],
+    "github_pr_status": [
+      "gh pr view 8 --repo XorishiTtv/angelssword-adventurers-overlay --json number,state,isDraft,mergeable,baseRefName,baseRefOid,headRefName,headRefOid,url",
+      "gh pr checks 8 --repo XorishiTtv/angelssword-adventurers-overlay"
+    ]
+  },
+  "sha_policy": {
+    "source_of_truth": "The fetched remote tracking ref origin/agent/ai-actors-control-panel.",
+    "rule": "Do not treat a SHA written inside this repository as permanently current because the commit that updates the record creates a new head SHA.",
+    "handoff_rule": "Every work handoff must report the exact current remote head SHA after all commits are complete."
+  },
+  "safety": {
+    "update_mode": "Use git pull --ff-only so an update cannot silently create a merge commit.",
+    "dirty_checkout": "Commit, stash, or intentionally discard local changes before updating. Do not use git reset --hard unless the work is backed up and the destructive action is deliberate."
+  }
+}
