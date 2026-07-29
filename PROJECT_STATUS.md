@@ -24,10 +24,13 @@ Completed and live-tested areas include:
 - actor reset behavior;
 - Streamer.bot helper compilation and all seven named methods;
 - cross-action speech-session storage and stale-session protection;
-- OBS rendering through the certificate-valid `https://localhost:3000` origin; and
-- overlay reconnection and recovery behavior.
+- OBS rendering through the certificate-valid `https://localhost:3000` origin;
+- overlay reconnection and recovery behavior; and
+- the local checkout and repository handoff workflow.
 
-The immediate next step is to update and verify the local checkout. Production TTS integration, the multi-actor TTS test, the LAN-enabled Windows package build, and a clean-folder smoke test follow that checkpoint.
+The immediate next step is production TTS integration. Use `streamerbot/PRODUCTION_TTS_INTEGRATION.md` and the non-secret `streamerbot/actor-tts-mapping.example.json` worksheet to connect one actor identity before expanding to the remaining actors.
+
+After production TTS integration, the remaining gates are the multi-actor TTS test, the LAN-enabled Windows package build, and a clean-folder smoke test.
 
 See `project-status.json` for the complete status record and `next-steps.json` for the ordered roadmap.
 
@@ -146,5 +149,7 @@ Use placeholder actor IDs and redacted URLs in documentation. Treat Streamer.bot
 - `LAN_SETUP.md` — secure LAN installation, machine registration, assets, OBS, certificates, backups, and release builds.
 - `AI_ACTOR_CONTROL_PANEL.md` — actor creation, credentials, emotes, recovery, endpoints, and security.
 - `STREAMERBOT_AI_ACTORS.md` — helper installation, arguments, TTS sessions, emotes, outputs, live-test checklist, and troubleshooting.
+- `streamerbot/PRODUCTION_TTS_INTEGRATION.md` — one-actor-first production wiring, completion/error cleanup, fallback behavior, and acceptance checks.
+- `streamerbot/actor-tts-mapping.example.json` — documentation-only identity-to-actor worksheet containing no raw token values.
 - `AI_ACTOR_MVP.md` — lower-level actor API and MVP design notes.
 - `CHANGELOG.md` — user-visible changes grouped by development state.
