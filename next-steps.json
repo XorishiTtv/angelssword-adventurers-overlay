@@ -22,7 +22,7 @@
         "git fetch --prune origin",
         "git switch agent/ai-actors-control-panel",
         "git pull --ff-only origin agent/ai-actors-control-panel",
-        "npm install",
+        "npm ci",
         "npm run status:check"
       ],
       "acceptance_criteria": [
@@ -31,6 +31,7 @@
         "Ahead and behind are both zero",
         "origin/agent/lan-mode is an ancestor of HEAD",
         "The worktree is clean",
+        "npm ci completes without changing package-lock.json",
         "npm run status:check passes",
         "The exact expected head SHA is recorded in the work handoff"
       ]
@@ -161,7 +162,7 @@
   ],
   "maintenance": {
     "rule": "When an item is completed, record the result in project-status.json, remove or mark the roadmap item complete, update updated_at in project-status.json, next-steps.json, and repository-checks.json, and add a concise CHANGELOG.md entry.",
-    "checkout_rule": "Run npm run status:check after fetching and before beginning the next roadmap item.",
+    "checkout_rule": "Use npm ci, then run npm run status:check after fetching and before beginning the next roadmap item.",
     "security": "Never place live tokens, authenticated OBS URLs, or certificate secrets in roadmap files."
   }
 }
