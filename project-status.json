@@ -9,7 +9,8 @@
     "base_branch": "agent/lan-mode",
     "pull_request": 8,
     "pull_request_state": "draft",
-    "release_state": "implementation-complete-release-validation-pending"
+    "release_state": "implementation-complete-release-validation-pending",
+    "current_task": "production-tts-integration"
   },
   "repository_handoff": {
     "policy_file": "repository-checks.json",
@@ -21,7 +22,7 @@
     "expected_base_ref": "origin/agent/lan-mode",
     "expected_head_rule": "After fetching and updating, local HEAD must equal the expected head ref.",
     "github_status_snapshot": {
-      "observed_at": "2026-07-29T09:10:00-04:00",
+      "observed_at": "2026-07-29T09:53:00-04:00",
       "pull_request_state": "open",
       "draft": true,
       "mergeable": true,
@@ -103,15 +104,27 @@
     {
       "id": "repository-status-workflow",
       "title": "Repository checkout and handoff checks",
-      "status": "implemented-first-run-complete-retest-pending",
+      "status": "complete-user-confirmed",
       "details": [
         "Machine-readable repository-checks.json policy",
         "Fresh checkout and fast-forward update guide",
         "Local branch, head, base, ahead/behind, cleanliness, and JSON consistency checker",
         "Standard handoff fields for expected head and GitHub check status",
         "Node syntax validation passed for the checker",
-        "The first Windows checkout run passed every check except clean-worktree and correctly identified package-lock.json as modified",
-        "The dependency-install procedure was corrected from npm install to npm ci"
+        "The first Windows checkout run identified an incidental package-lock.json modification",
+        "The dependency-install procedure was corrected from npm install to npm ci",
+        "The owner reported the expected branch, base, PR, and head values for 23a36f3c5842c7bbc7d983dad073011ba9e85118 and authorized progression"
+      ]
+    },
+    {
+      "id": "production-tts-mapping-worksheet",
+      "title": "Production TTS actor mapping worksheet",
+      "status": "complete",
+      "details": [
+        "Added streamerbot/actor-tts-mapping.example.json",
+        "Records actor IDs and persisted token-global names without raw token values",
+        "Explicitly documentation-only and not automatically read by the helper",
+        "Preserves the existing non-actor TTS fallback for unmapped identities"
       ]
     }
   ],
@@ -143,8 +156,8 @@
     },
     {
       "id": "repository-status-checker",
-      "status": "first-run-detected-dirty-lockfile-retest-pending",
-      "details": "The first local Windows run verified branch, local and remote head equality, zero ahead and behind, base ancestry, JSON consistency, and the next roadmap item. It failed only because npm install modified package-lock.json. The checkout procedure now uses npm ci and requires a clean rerun."
+      "status": "passed-by-owner-confirmation",
+      "details": "The owner reported the expected branch, base, PR, and head values after the corrected checkout workflow and authorized progression to production TTS integration. The verified head was 23a36f3c5842c7bbc7d983dad073011ba9e85118; the current head must always be read from the fetched remote ref."
     },
     {
       "id": "packaged-windows-release",
