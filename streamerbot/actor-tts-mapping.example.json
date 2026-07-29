@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Documentation-only worksheet for mapping production TTS identities to AS Adventurer actors.",
+  "runtime_behavior": "This file is not read automatically by AS Adventurer or the Streamer.bot helper.",
+  "security": {
+    "store_token_values_here": false,
+    "token_storage": "Store each raw actor token in a persisted Streamer.bot global variable and record only that global variable's name here."
+  },
+  "actor_base_url": "https://localhost:3000",
+  "identities": [
+    {
+      "tts_identity": "example-ai-voice",
+      "enabled": true,
+      "actor_id": "actor-REPLACE-WITH-ID",
+      "actor_token_global": "asActorTokenReplaceMe",
+      "default_expression": "neutral",
+      "expires_in_ms": 45000,
+      "notes": "Replace placeholders locally. Never commit a raw actor token or authenticated OBS URL."
+    }
+  ],
+  "fallback": {
+    "unmapped_identity_behavior": "Continue through the existing non-actor TTS and overlay path."
+  }
+}
