@@ -19,6 +19,8 @@ All notable user-visible changes to AS Adventurer are recorded here.
 - `project-status.json`, `next-steps.json`, and `PROJECT_STATUS.md` for machine-readable and human-readable progress tracking.
 - `repository-checks.json` and `LOCAL_CHECKOUT.md` for active branch, base, PR, expected-ref, checkout, update, and handoff rules.
 - `npm run status:check` for local branch, expected head, ahead/behind, base ancestry, clean-worktree, and project-record validation.
+- `streamerbot/PRODUCTION_TTS_INTEGRATION.md` with a one-actor-first production wiring and cleanup runbook.
+- `streamerbot/actor-tts-mapping.example.json` as a documentation-only identity-to-actor worksheet containing no raw token values.
 
 ### Changed
 
@@ -26,10 +28,10 @@ All notable user-visible changes to AS Adventurer are recorded here.
 - Actor overlays replay their selected model after reconnecting.
 - Held Type 2 emotes can be restored after a transient socket interruption while the LAN process remains running.
 - Same-computer OBS and Streamer.bot setup uses the certificate-valid `https://localhost:3000` origin.
-- Documentation now separates general setup, LAN setup, AI Actor management, Streamer.bot use, project status, roadmap, and local checkout information.
-- The immediate roadmap checkpoint is now a verified local checkout before production TTS integration begins.
+- Documentation now separates general setup, LAN setup, AI Actor management, Streamer.bot use, production TTS integration, project status, roadmap, and local checkout information.
+- The local checkout checkpoint is complete and production TTS integration is now the immediate roadmap item.
 - Repository updates use `git pull --ff-only`, and work handoffs report the exact current remote head after all commits are complete.
-- Fresh and updated verification checkouts now use `npm ci` instead of `npm install` so dependencies come from the committed lockfile without an incidental lockfile rewrite.
+- Fresh and updated verification checkouts use `npm ci` instead of `npm install` so dependencies come from the committed lockfile without an incidental lockfile rewrite.
 
 ### Fixed
 
@@ -45,12 +47,11 @@ All notable user-visible changes to AS Adventurer are recorded here.
 - The Streamer.bot helper compiled successfully and exposed all seven named methods.
 - Streamer.bot expression, start, stop, reset, emote, sub-emote, release, cross-action session lookup, and stale-session protection passed live testing.
 - Overlay recovery behavior passed the project harnesses and live observational testing.
-- The repository status checker passed Node syntax validation and correctly detected an incidental `package-lock.json` change in a fresh Windows checkout.
+- The repository status checker passed Node syntax validation, correctly detected an incidental `package-lock.json` change, and the owner authorized progression after reporting the expected branch, base, PR, and head values.
 - GitHub reported no commit status contexts for the observed PR #8 head, so no CI pass is being claimed.
 
 ### Remaining before release promotion
 
-- Restore the committed lockfile, update the local checkout, run `npm ci`, and rerun `npm run status:check`.
 - Connect the helper to the production TTS workflow and run an end-to-end multi-actor test.
 - Build the LAN-enabled Windows release package.
 - Run a clean-folder package smoke test.
