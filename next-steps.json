@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "project": "AS Adventurer",
-  "updated_at": "2026-07-24",
+  "updated_at": "2026-07-29",
   "source_status_file": "project-status.json",
   "status_values": [
     "next",
@@ -14,9 +14,35 @@
   "items": [
     {
       "order": 1,
+      "id": "local-checkout-verification",
+      "title": "Update and verify the local working checkout",
+      "status": "next",
+      "guide": "LOCAL_CHECKOUT.md",
+      "commands": [
+        "git fetch --prune origin",
+        "git switch agent/ai-actors-control-panel",
+        "git pull --ff-only origin agent/ai-actors-control-panel",
+        "npm install",
+        "npm run status:check"
+      ],
+      "acceptance_criteria": [
+        "The current branch is agent/ai-actors-control-panel",
+        "Local HEAD equals origin/agent/ai-actors-control-panel",
+        "Ahead and behind are both zero",
+        "origin/agent/lan-mode is an ancestor of HEAD",
+        "The worktree is clean",
+        "npm run status:check passes",
+        "The exact expected head SHA is recorded in the work handoff"
+      ]
+    },
+    {
+      "order": 2,
       "id": "production-tts-integration",
       "title": "Connect actor helper calls to the production TTS workflow",
-      "status": "next",
+      "status": "planned",
+      "blocked_by": [
+        "local-checkout-verification"
+      ],
       "requires_repository_code_change": false,
       "acceptance_criteria": [
         "Each supported TTS identity resolves to the intended actor ID and token variable",
@@ -28,10 +54,10 @@
       "notes": "Keep raw actor tokens in Streamer.bot persisted globals, not in repository files."
     },
     {
-      "order": 2,
+      "order": 3,
       "id": "end-to-end-multi-actor-tts-test",
       "title": "Run an end-to-end multi-actor TTS test",
-      "status": "planned",
+      "status": "blocked",
       "blocked_by": [
         "production-tts-integration"
       ],
@@ -43,7 +69,7 @@
       ]
     },
     {
-      "order": 3,
+      "order": 4,
       "id": "packaged-windows-build",
       "title": "Build the LAN-enabled Windows release",
       "status": "planned",
@@ -56,7 +82,7 @@
       ]
     },
     {
-      "order": 4,
+      "order": 5,
       "id": "clean-folder-smoke-test",
       "title": "Smoke-test the packaged release from a clean folder",
       "status": "blocked",
@@ -73,7 +99,7 @@
       ]
     },
     {
-      "order": 5,
+      "order": 6,
       "id": "pr-8-release-gate",
       "title": "Update PR #8 after release validation",
       "status": "blocked",
@@ -87,7 +113,7 @@
       ]
     },
     {
-      "order": 6,
+      "order": 7,
       "id": "merge-pr-8",
       "title": "Merge Phase 2 into agent/lan-mode",
       "status": "blocked",
@@ -97,7 +123,7 @@
       "requires_explicit_owner_approval": true
     },
     {
-      "order": 7,
+      "order": 8,
       "id": "combined-lan-regression",
       "title": "Retest the combined LAN integration branch",
       "status": "blocked",
@@ -112,7 +138,7 @@
       ]
     },
     {
-      "order": 8,
+      "order": 9,
       "id": "merge-pr-1",
       "title": "Promote secure LAN mode to main",
       "status": "blocked",
@@ -122,7 +148,7 @@
       "requires_explicit_owner_approval": true
     },
     {
-      "order": 9,
+      "order": 10,
       "id": "quantitative-performance-baseline",
       "title": "Record an optional OBS CPU and GPU baseline",
       "status": "planned",
@@ -134,7 +160,8 @@
     }
   ],
   "maintenance": {
-    "rule": "When an item is completed, record the result in project-status.json, remove or mark the roadmap item complete, update updated_at in both files, and add a concise CHANGELOG.md entry.",
+    "rule": "When an item is completed, record the result in project-status.json, remove or mark the roadmap item complete, update updated_at in project-status.json, next-steps.json, and repository-checks.json, and add a concise CHANGELOG.md entry.",
+    "checkout_rule": "Run npm run status:check after fetching and before beginning the next roadmap item.",
     "security": "Never place live tokens, authenticated OBS URLs, or certificate secrets in roadmap files."
   }
 }
