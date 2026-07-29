@@ -16,8 +16,12 @@
       "order": 1,
       "id": "local-checkout-verification",
       "title": "Update and verify the local working checkout",
-      "status": "next",
+      "status": "complete",
       "guide": "LOCAL_CHECKOUT.md",
+      "completed_at": "2026-07-29T09:53:00-04:00",
+      "verified_head_sha": "23a36f3c5842c7bbc7d983dad073011ba9e85118",
+      "verified_base_sha": "ea9c4317e860c14199ad7547cc579000161de4ba",
+      "completion_note": "The owner reported the expected branch, base, PR, and head values and authorized progression to production TTS integration. The recorded SHA is historical; fetch the remote ref for the current head.",
       "commands": [
         "git fetch --prune origin",
         "git switch agent/ai-actors-control-panel",
@@ -40,11 +44,18 @@
       "order": 2,
       "id": "production-tts-integration",
       "title": "Connect actor helper calls to the production TTS workflow",
-      "status": "planned",
-      "blocked_by": [
-        "local-checkout-verification"
-      ],
+      "status": "next",
       "requires_repository_code_change": false,
+      "guide": "STREAMERBOT_AI_ACTORS.md",
+      "mapping_worksheet": "streamerbot/actor-tts-mapping.example.json",
+      "integration_sequence": [
+        "Inventory the production TTS action and every completion or error path",
+        "Map one TTS identity to one actor ID and persisted token-global name",
+        "Call StartTts immediately before audio playback",
+        "Call StopTts after successful playback and on cleanup or failure",
+        "Verify unmapped identities still use the existing non-actor path",
+        "Repeat for remaining actor identities after the first mapping passes"
+      ],
       "acceptance_criteria": [
         "Each supported TTS identity resolves to the intended actor ID and token variable",
         "StartTts runs before audio playback",
@@ -52,7 +63,7 @@
         "A delayed stop from an older playback cannot stop a newer session",
         "Non-actor TTS users continue using the existing overlay behavior"
       ],
-      "notes": "Keep raw actor tokens in Streamer.bot persisted globals, not in repository files."
+      "notes": "Keep raw actor tokens in Streamer.bot persisted globals, not in repository files. The mapping worksheet records only global variable names and is not loaded automatically by the helper."
     },
     {
       "order": 3,
