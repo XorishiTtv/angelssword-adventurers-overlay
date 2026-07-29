@@ -14,13 +14,23 @@
     "expected_base_rule": "origin/agent/lan-mode must be an ancestor of local HEAD."
   },
   "github_snapshot": {
-    "observed_at": "2026-07-29T09:10:00-04:00",
+    "observed_at": "2026-07-29T09:53:00-04:00",
     "pull_request_state": "open",
     "draft": true,
     "mergeable": true,
     "reported_commit_status_contexts": 0,
     "reported_commit_status": "none-reported",
     "note": "GitHub reported no commit status contexts for the observed PR head. Local repository checks remain required."
+  },
+  "last_verified_checkout": {
+    "verified_at": "2026-07-29T09:53:00-04:00",
+    "verified_head_sha": "23a36f3c5842c7bbc7d983dad073011ba9e85118",
+    "verified_base_sha": "ea9c4317e860c14199ad7547cc579000161de4ba",
+    "branch": "agent/ai-actors-control-panel",
+    "base_branch": "agent/lan-mode",
+    "pull_request": 8,
+    "result": "accepted-by-owner-for-progression",
+    "note": "This SHA is a historical verified checkout. Later documentation commits advance the branch head; always fetch the expected head ref before beginning work."
   },
   "local_checks": [
     {
