@@ -20,9 +20,11 @@ git clone https://github.com/XorishiTtv/angelssword-adventurers-overlay.git
 cd angelssword-adventurers-overlay
 git fetch --prune origin
 git switch --track -c agent/ai-actors-control-panel origin/agent/ai-actors-control-panel
-npm install
+npm ci
 npm run status:check
 ```
+
+Use `npm ci` for a clean checkout. It installs exactly from the committed `package-lock.json`, removes an existing `node_modules` directory when necessary, and does not rewrite the lockfile during a normal successful install.
 
 Expected result:
 
@@ -50,17 +52,38 @@ Then update with a fast-forward-only pull:
 git fetch --prune origin
 git switch agent/ai-actors-control-panel
 git pull --ff-only origin agent/ai-actors-control-panel
-npm install
+npm ci
 npm run status:check
 ```
 
 `--ff-only` prevents Git from silently creating a merge commit during an ordinary update.
 
-To fetch and check in one command after the branch is selected:
+To fetch and check in one command after the branch is selected and dependencies are already current:
 
 ```powershell
 npm run status:check -- --fetch
 ```
+
+## Recover when `npm install` changed `package-lock.json`
+
+A fresh verification checkout should not update dependency versions or normalize the tracked lockfile. Inspect the change first:
+
+```powershell
+git diff -- package-lock.json
+```
+
+When the lockfile change was caused only by running `npm install` in the fresh checkout, restore the committed lockfile and reinstall reproducibly:
+
+```powershell
+git restore package-lock.json
+Remove-Item -Recurse -Force node_modules
+npm ci
+npm run status:check
+```
+
+Do not commit an incidental lockfile rewrite. A deliberate dependency update is separate work and must include review of `package.json`, `package-lock.json`, `npm audit`, runtime compatibility, and release-build behavior.
+
+Do not run `npm audit fix` automatically as part of checkout verification. It may update dependency versions and the lockfile. Record and review audit findings separately.
 
 ## Verify the expected head manually
 
