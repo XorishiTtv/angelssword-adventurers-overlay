@@ -29,12 +29,14 @@ All notable user-visible changes to AS Adventurer are recorded here.
 - Documentation now separates general setup, LAN setup, AI Actor management, Streamer.bot use, project status, roadmap, and local checkout information.
 - The immediate roadmap checkpoint is now a verified local checkout before production TTS integration begins.
 - Repository updates use `git pull --ff-only`, and work handoffs report the exact current remote head after all commits are complete.
+- Fresh and updated verification checkouts now use `npm ci` instead of `npm install` so dependencies come from the committed lockfile without an incidental lockfile rewrite.
 
 ### Fixed
 
 - Actor emote media URLs with signed query parameters now retain a renderer-compatible extension hint, allowing WebM and other media to be detected correctly.
 - Removed the global Express response monkey patch from actor control-panel injection and limited response transformation to the intended control-page routes.
 - Added bounded startup and reconnection recovery so an overlay is less likely to remain blank after a temporary server interruption.
+- Added documented recovery for a `package-lock.json` change caused by running `npm install` during clean-checkout verification.
 
 ### Validated
 
@@ -43,12 +45,12 @@ All notable user-visible changes to AS Adventurer are recorded here.
 - The Streamer.bot helper compiled successfully and exposed all seven named methods.
 - Streamer.bot expression, start, stop, reset, emote, sub-emote, release, cross-action session lookup, and stale-session protection passed live testing.
 - Overlay recovery behavior passed the project harnesses and live observational testing.
-- The repository status checker passed Node syntax validation; execution against the updated local checkout is the next checkpoint.
+- The repository status checker passed Node syntax validation and correctly detected an incidental `package-lock.json` change in a fresh Windows checkout.
 - GitHub reported no commit status contexts for the observed PR #8 head, so no CI pass is being claimed.
 
 ### Remaining before release promotion
 
-- Update the local checkout and run `npm run status:check`.
+- Restore the committed lockfile, update the local checkout, run `npm ci`, and rerun `npm run status:check`.
 - Connect the helper to the production TTS workflow and run an end-to-end multi-actor test.
 - Build the LAN-enabled Windows release package.
 - Run a clean-folder package smoke test.
