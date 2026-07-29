@@ -60,7 +60,7 @@
       "cd angelssword-adventurers-overlay",
       "git fetch --prune origin",
       "git switch --track -c agent/ai-actors-control-panel origin/agent/ai-actors-control-panel",
-      "npm install",
+      "npm ci",
       "npm run status:check"
     ],
     "update_existing_checkout": [
@@ -68,13 +68,25 @@
       "git fetch --prune origin",
       "git switch agent/ai-actors-control-panel",
       "git pull --ff-only origin agent/ai-actors-control-panel",
-      "npm install",
+      "npm ci",
+      "npm run status:check"
+    ],
+    "recover_incidental_lockfile_change": [
+      "git diff -- package-lock.json",
+      "git restore package-lock.json",
+      "Remove-Item -Recurse -Force node_modules",
+      "npm ci",
       "npm run status:check"
     ],
     "github_pr_status": [
       "gh pr view 8 --repo XorishiTtv/angelssword-adventurers-overlay --json number,state,isDraft,mergeable,baseRefName,baseRefOid,headRefName,headRefOid,url",
       "gh pr checks 8 --repo XorishiTtv/angelssword-adventurers-overlay"
     ]
+  },
+  "dependency_install_policy": {
+    "checkout_command": "npm ci",
+    "reason": "Install exactly from package-lock.json without an incidental lockfile rewrite.",
+    "audit_rule": "Do not run npm audit fix automatically during checkout verification because it may change dependency versions and package-lock.json."
   },
   "sha_policy": {
     "source_of_truth": "The fetched remote tracking ref origin/agent/ai-actors-control-panel.",
