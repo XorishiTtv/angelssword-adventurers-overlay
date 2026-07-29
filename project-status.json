@@ -14,6 +14,7 @@
   "repository_handoff": {
     "policy_file": "repository-checks.json",
     "guide": "LOCAL_CHECKOUT.md",
+    "dependency_install_command": "npm ci",
     "local_check_command": "npm run status:check",
     "fetch_and_check_command": "npm run status:check -- --fetch",
     "expected_head_ref": "origin/agent/ai-actors-control-panel",
@@ -102,13 +103,15 @@
     {
       "id": "repository-status-workflow",
       "title": "Repository checkout and handoff checks",
-      "status": "implemented-local-execution-pending",
+      "status": "implemented-first-run-complete-retest-pending",
       "details": [
         "Machine-readable repository-checks.json policy",
         "Fresh checkout and fast-forward update guide",
         "Local branch, head, base, ahead/behind, cleanliness, and JSON consistency checker",
         "Standard handoff fields for expected head and GitHub check status",
-        "Node syntax validation passed for the checker"
+        "Node syntax validation passed for the checker",
+        "The first Windows checkout run passed every check except clean-worktree and correctly identified package-lock.json as modified",
+        "The dependency-install procedure was corrected from npm install to npm ci"
       ]
     }
   ],
@@ -140,8 +143,8 @@
     },
     {
       "id": "repository-status-checker",
-      "status": "syntax-passed-local-run-pending",
-      "details": "The Node checker passed syntax validation. Run npm run status:check after updating the local checkout."
+      "status": "first-run-detected-dirty-lockfile-retest-pending",
+      "details": "The first local Windows run verified branch, local and remote head equality, zero ahead and behind, base ancestry, JSON consistency, and the next roadmap item. It failed only because npm install modified package-lock.json. The checkout procedure now uses npm ci and requires a clean rerun."
     },
     {
       "id": "packaged-windows-release",
@@ -161,6 +164,10 @@
     {
       "id": "github-status-contexts",
       "details": "GitHub currently reports no commit status contexts for PR #8. This is not a passing CI suite; local and live validation remain required."
+    },
+    {
+      "id": "dependency-audit",
+      "details": "The first npm install reported one low and one high vulnerability. The dependency paths have not yet been reviewed, and npm audit fix must not be run automatically during checkout verification."
     },
     {
       "id": "merge-state",
