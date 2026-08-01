@@ -9,8 +9,8 @@
     "base_branch": "main",
     "pull_request": 1,
     "pull_request_state": "draft",
-    "release_state": "combined-integration-regression-pending",
-    "current_task": "combined-lan-regression"
+    "release_state": "combined-integration-regression-complete-owner-promotion-pending",
+    "current_task": "owner-approval-pr-1-promotion"
   },
   "repository_handoff": {
     "policy_file": "repository-checks.json",
@@ -21,7 +21,7 @@
     "expected_head_ref": "origin/agent/lan-mode",
     "expected_base_ref": "origin/main",
     "github_status_snapshot": {
-      "observed_at": "2026-08-01T04:23:00-04:00",
+      "observed_at": "2026-08-01T04:59:00-04:00",
       "pull_request": 1,
       "pull_request_state": "open",
       "draft": true,
@@ -115,8 +115,21 @@
       "details": [
         "PR #8 was marked ready only after explicit owner approval",
         "PR #8 merged into agent/lan-mode at merge commit 670e108f695ca76ec53b032a6bff51b562ef20d3",
-        "PR #1 now contains the combined secure LAN and AI Actor work",
-        "PR #1 remains draft and unmerged"
+        "PR #1 now contains the combined secure LAN and AI Actor work"
+      ]
+    },
+    {
+      "id": "combined-lan-regression",
+      "title": "Combined secure LAN integration regression",
+      "status": "complete-by-owner-confirmation",
+      "details": [
+        "The default launcher remained localhost-only and the ordinary control panel and overlay worked",
+        "Secure LAN certificate setup and trusted remote HTTPS access worked",
+        "Machine registration, global models, private uploads, model selection, and emotes worked",
+        "AI Actor creation, actor overlays, expressions, speaking state, reset, emotes, and nested sub-animations worked",
+        "Streamer.bot reached the actor API and mapped serial TTS returned each actor to idle",
+        "Main and actor OBS sources rendered remotely and recovered after the LAN process restarted",
+        "The owner reported the combined integration was in working order"
       ]
     }
   ],
@@ -124,7 +137,7 @@
     {
       "id": "main-and-actor-overlays",
       "status": "passed",
-      "details": "Main and actor overlays rendered in browser and OBS on same-computer localhost and remote secure-LAN setups before the integration merge."
+      "details": "Main and actor overlays rendered in browser and OBS on same-computer localhost and remote secure-LAN setups."
     },
     {
       "id": "actor-emote-playback",
@@ -159,8 +172,8 @@
     },
     {
       "id": "combined-lan-regression",
-      "status": "next",
-      "details": "Retest localhost mode, secure LAN registration and assets, AI Actors, Streamer.bot controls, and OBS restart recovery from agent/lan-mode before PR #1 promotion."
+      "status": "passed-by-owner-confirmation",
+      "details": "The owner confirmed localhost mode, secure LAN registration and assets, AI Actors, Streamer.bot serial TTS, remote OBS rendering, and LAN restart recovery were all in working order on agent/lan-mode."
     }
   ],
   "known_limits": [
@@ -190,7 +203,7 @@
     },
     {
       "id": "promotion-state",
-      "details": "PR #8 is merged. PR #1 remains draft and unmerged; marking it ready or merging it requires separate explicit owner approval after combined regression validation."
+      "details": "Combined regression is complete. PR #1 remains draft and unmerged; marking it ready or merging it requires separate explicit owner approval."
     }
   ],
   "security": {
