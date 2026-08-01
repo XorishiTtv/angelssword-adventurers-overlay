@@ -8,58 +8,36 @@ All notable user-visible changes to AS Adventurer are recorded here.
 
 - Opt-in secure LAN mode using HTTPS and secure WebSockets on trusted private networks.
 - Machine registration with isolated private model storage and shared read-only global models.
-- AI Actor creation, naming, model selection, reset, credential regeneration, OBS source generation, and deletion controls.
-- Actor-scoped expressions, speaking state, speech-session IDs, stale-stop protection, emotes, and nested sub-animations.
-- Reusable `streamerbot/ASAdventurerActorHelper.cs` with seven named methods.
-- Shared overlay recovery, inactive-media pausing, removed-media cleanup, project records, and checkout checks.
+- AI Actor creation, actor-scoped state, speech sessions, emotes, nested sub-animations, and OBS sources.
+- Reusable Streamer.bot state-control helper and a companion actor-capability discovery helper.
+- Actor-token-authenticated `GET /api/actors/:actorId/capabilities` for AI self-control discovery.
+- URL-free capability responses containing dedicated installed expression names, Type 1 and Type 2 emote names, and nested sub-emote names.
+- `AI_SELF_ACTOR_CONTROLS.md` covering the hidden command protocol, profile mappings, queue isolation, playback timing, failure behavior, and security boundary.
 
 ### Changed
 
-- Production TTS uses one serial queue by design so only one synthesized voice is audible at a time.
-- `gnisu` and `dascribe` are validated production actor identities; unmapped playback retains the original fallback.
-- Fresh and updated checkouts use `npm ci` and fast-forward-only pulls.
-- Phase 2 AI Actors merged through PR #8 into `agent/lan-mode` at `670e108f695ca76ec53b032a6bff51b562ef20d3`.
-- The combined secure LAN and AI Actor integration merged through PR #1 into `main` at `a7c17ed75aafe34dff62d88345a75278665fd564`.
-- The active checkout contract now uses `main` against `origin/main`.
-- Release administration is the remaining roadmap decision.
+- Production TTS continues to use one serial queue by design so only one synthesized voice is audible at a time.
+- AI self-control is designed as a sanitized visual intent carried with each immutable TTS queue item rather than direct model access to actor credentials or HTTP endpoints.
+- Expression capability discovery reports dedicated installed assets for the existing logical expression protocol instead of advertising every fallback expression.
+- Fresh and updated feature checkouts use `agent/ai-self-actor-controls` against `main` through draft PR #9.
 
-### Fixed
+### Security
 
-- Actor emote signed URLs retain a renderer-compatible media extension hint.
-- Overlay startup and reconnection recovery use bounded retry and reload behavior.
-- Duplicate TTS File Watcher playback and stale helper capability discovery were removed from the validated production paths.
-- Standard and LAN release builders use the Archiver 8 `ZipArchive` constructor API.
-- Remote OBS transparency caused by an untrusted generated LAN certificate was resolved by trusting the generated root certificate on the OBS computer and restarting browser processes.
+- Capability responses exclude actor tokens, token hashes, machine tokens, authenticated OBS addresses, media URLs, media filenames, certificate material, and filesystem paths.
+- Raw actor tokens remain persisted Streamer.bot globals and are not added to OpenAI prompts, AI responses, logs, repository files, or status records.
+- The capability helper rejects public Internet destinations and clear-text HTTP for non-loopback hosts.
 
 ### Validated
 
-- Main and actor overlays rendered in browser and OBS through same-computer localhost and remote secure-LAN setups.
-- Actor expression, speaking, reset, Type 2 emote, nested sub-animation, and release behavior passed live testing.
-- The Streamer.bot helper compiled and all seven named methods passed live testing.
-- Production `gnisu` and `dascribe` requests completed isolated start, blocking playback, and stop lifecycles through the accepted serial queue.
-- An unmapped identity retained direct blocking fallback playback without starting an actor.
-- `ASAdventurer.exe` and `ASAdventurerLAN.exe` built successfully with `pkg` 5.8.1 and GZip compression.
-- Both ZIP creation stages passed after the Archiver 8 correction.
-- The final `release/ASAdventurer.zip` archive was 30.5 MB.
-- Required launchers, checksum files, certificate setup, LAN and actor documentation, and the Streamer.bot helper source were present.
-- A clean-folder package test ran with the server on one computer and browser/OBS clients on another LAN computer.
-- The combined branch passed owner-confirmed regression coverage for localhost mode, secure LAN registration and assets, AI Actors, Streamer.bot serial TTS, remote OBS rendering, and LAN restart recovery.
-- PR #1 was marked ready and merged into `main` only after separate explicit owner instructions; no auto-merge was enabled.
-- GitHub reported no status contexts for the PR #1 merge commit, so no CI pass is claimed.
+- JavaScript syntax passed for the capability module and LAN bootstrap.
+- A local harness passed actor-token authentication, dedicated expression discovery, Type 1/Type 2 emote discovery, and nested sub-emote discovery.
+- The harness confirmed that capability output did not contain the test token, token hash, media filename, or asset URL.
+- Structural delimiter checks passed for the companion C# helper source.
 
-### Recorded checksums
+### Pending
 
-```text
-ASAdventurer.exe
-52fd671cab5767289e3218057024d0d3a3e4662d104a8369933ac529f8e8aa9b
-
-ASAdventurerLAN.exe
-ef35d7d20cca29ed2290ab6ae44f850c6292c66c541e5d661e942857928b14eb
-```
-
-### Remaining release administration
-
-- Choose a version and Git tag.
-- Decide whether to publish the validated Windows archive as a GitHub Release.
-- Decide whether completed integration branches should be retained or deleted.
-- Optionally record a quantitative OBS CPU/GPU baseline.
+- Compile and exercise the companion helper in Streamer.bot.
+- Install and live-test the personalized UniversalBot hidden-command integration.
+- Copy visual intent into production TTS queue items and synchronize it with playback.
+- Validate malformed commands, cross-actor isolation, failure cleanup, remote OBS recovery, LAN restart recovery, and the Windows package.
+- Keep PR #9 draft and unmerged until validation completes and explicit owner approvals are given.
