@@ -4,12 +4,18 @@ AS Adventurer keeps its active state in `project-status.json`, `next-steps.json`
 
 ## Current state
 
-Phase 2 AI Actors is implemented on `agent/ai-actors-control-panel` in draft PR #8, targeting `agent/lan-mode`.
+Phase 2 AI Actors was merged through PR #8 into `agent/lan-mode` at merge commit:
+
+```text
+670e108f695ca76ec53b032a6bff51b562ef20d3
+```
+
+The active integration pull request is now draft PR #1 from `agent/lan-mode` into `main`.
 
 Completed and live-tested areas include:
 
-- secure LAN machine registration, private assets, and authenticated OBS URLs;
-- AI Actor creation, lifecycle, expressions, speaking state, and actor-scoped emotes;
+- secure LAN machine registration, private assets, shared global models, and authenticated OBS URLs;
+- AI Actor creation, lifecycle, expressions, speaking state, actor-scoped emotes, and nested sub-animations;
 - Streamer.bot helper compilation and all seven named methods;
 - overlay recovery and signed-media playback compatibility;
 - production TTS routing for `gnisu` and `dascribe` through the accepted serial queue;
@@ -32,7 +38,7 @@ The Windows package build produced:
 - `streamerbot/ASAdventurerActorHelper.cs`; and
 - `release/ASAdventurer.zip` at 30.5 MB.
 
-The Archiver 8 ZIP paths were corrected to use `ZipArchive`, and both the initial and final ZIP stages passed.
+The Archiver 8 ZIP paths use `ZipArchive`, and both the initial and final ZIP stages passed.
 
 Recorded executable checksums:
 
@@ -54,19 +60,27 @@ The optional `Queri` demo model was not bundled because it was absent from `publ
 
 ## Immediate next step
 
-Release validation is complete. The only immediate roadmap item is the explicit owner decision for PR #8 promotion into `agent/lan-mode`.
+Run the combined LAN regression test from `agent/lan-mode` before promoting PR #1.
 
-PR #8 remains **open, draft, mergeable, unmerged**, and has no reported GitHub status contexts. It must not be marked ready, auto-merged, or merged without an explicit owner instruction.
+The regression must confirm:
+
+- the default launcher remains localhost-only and the ordinary overlay still works;
+- secure LAN certificate setup, machine registration, global models, private uploads, model selection, and emotes work;
+- AI Actor management, actor overlays, expressions, speaking state, reset, emotes, and nested sub-animations work;
+- Streamer.bot reaches the actor API and mapped serial TTS returns each actor to idle; and
+- main and actor OBS sources render remotely and recover after a LAN process restart.
+
+PR #1 remains **open, draft, mergeable, and unmerged**. Marking it ready or merging it requires separate explicit owner instructions after regression validation.
 
 ## Active checkout contract
 
 ```text
 Repository:     XorishiTtv/angelssword-adventurers-overlay
-Working branch: agent/ai-actors-control-panel
-Base branch:    agent/lan-mode
-Pull request:   #8
-Expected head:  origin/agent/ai-actors-control-panel
-Expected base:  origin/agent/lan-mode
+Working branch: agent/lan-mode
+Base branch:    main
+Pull request:   #1
+Expected head:  origin/agent/lan-mode
+Expected base:  origin/main
 ```
 
 After fetching, local `HEAD` must equal the expected remote head:
@@ -74,13 +88,17 @@ After fetching, local `HEAD` must equal the expected remote head:
 ```powershell
 git status --short
 git fetch --prune origin
-git switch agent/ai-actors-control-panel
-git pull --ff-only origin agent/ai-actors-control-panel
+git switch agent/lan-mode
+git pull --ff-only origin agent/lan-mode
 npm ci
 npm run status:check
 ```
 
 The checker verifies matching project dates, branch/base/PR consistency, current branch, remote-head equality, ahead/behind, clean worktree, base ancestry, and exactly one `next` roadmap item.
+
+## GitHub checks
+
+At the recorded post-merge snapshot, PR #1 was open, draft, and mergeable, with no reported commit status contexts. No CI pass is being claimed; documented local and live regression evidence remains required.
 
 ## Security rules
 
