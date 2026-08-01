@@ -25,12 +25,20 @@ Completed and live-tested areas include:
 - Streamer.bot helper compilation and all seven named methods;
 - cross-action speech-session storage and stale-session protection;
 - OBS rendering through the certificate-valid `https://localhost:3000` origin;
-- overlay reconnection and recovery behavior; and
-- the local checkout and repository handoff workflow.
+- overlay reconnection and recovery behavior;
+- the local checkout and repository handoff workflow;
+- the first production actor mapping for `gnisu`; and
+- serial production routing for `gnisu` and `dascribe`, plus the unmapped OpenAI fallback.
 
-The immediate next step is production TTS integration. Use `streamerbot/PRODUCTION_TTS_INTEGRATION.md` and the non-secret `streamerbot/actor-tts-mapping.example.json` worksheet to connect one actor identity before expanding to the remaining actors.
+Production TTS intentionally uses one serial queue. One synthesized voice completes its actor start, blocking playback, and matching actor stop before the next queued voice begins. This is an accepted stream-design decision that keeps dialogue clean and understandable. Overlapping production speech and concurrent same-actor cleanup are therefore not release requirements.
 
-After production TTS integration, the remaining gates are the multi-actor TTS test, the LAN-enabled Windows package build, and a clean-folder smoke test.
+The immediate next step is the LAN-enabled Windows package build:
+
+```powershell
+npm run build-release:lan
+```
+
+After the package build, the remaining release-validation gate is a clean-folder smoke test. PR #8 stays draft until the owner explicitly approves marking it ready.
 
 See `project-status.json` for the complete status record and `next-steps.json` for the ordered roadmap.
 
@@ -75,7 +83,7 @@ The checker verifies:
 
 ## GitHub status checks
 
-At the time the repository-check workflow was added, PR #8 was open, draft, and mergeable, but GitHub reported no commit status contexts for its head.
+At the latest recorded snapshot, PR #8 was open, draft, and mergeable, but GitHub reported no commit status contexts for its head.
 
 “No reported checks” does not mean a CI suite passed. It means no GitHub commit statuses were configured or attached to the observed head. Local checks, harness results, and documented live tests remain the release evidence until CI is added.
 
@@ -150,6 +158,7 @@ Use placeholder actor IDs and redacted URLs in documentation. Treat Streamer.bot
 - `AI_ACTOR_CONTROL_PANEL.md` — actor creation, credentials, emotes, recovery, endpoints, and security.
 - `STREAMERBOT_AI_ACTORS.md` — helper installation, arguments, TTS sessions, emotes, outputs, live-test checklist, and troubleshooting.
 - `streamerbot/PRODUCTION_TTS_INTEGRATION.md` — one-actor-first production wiring, completion/error cleanup, fallback behavior, and acceptance checks.
+- `streamerbot/MULTI_ACTOR_TTS_TEST.md` — serial multi-actor production routing, queue isolation, and unmapped fallback validation.
 - `streamerbot/actor-tts-mapping.example.json` — documentation-only identity-to-actor worksheet containing no raw token values.
 - `AI_ACTOR_MVP.md` — lower-level actor API and MVP design notes.
 - `CHANGELOG.md` — user-visible changes grouped by development state.
