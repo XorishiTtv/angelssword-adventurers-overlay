@@ -1,15 +1,6 @@
 # Project status and roadmap
 
-AS Adventurer keeps a small set of human-readable and machine-readable project records in the repository root:
-
-- `project-status.json` records completed work, validation results, known limits, and the active development branch.
-- `next-steps.json` records ordered work items, blockers, and acceptance criteria.
-- `repository-checks.json` records the active branch, base, pull request, expected refs, local checks, and handoff rules.
-- `LOCAL_CHECKOUT.md` explains fresh checkout, safe updates, expected-head verification, and troubleshooting.
-- `CHANGELOG.md` summarizes user-visible changes.
-- Feature guides explain installation and operation in detail.
-
-These records do not affect overlay runtime behavior. `scripts/check-project-status.js` reads the JSON records and local Git metadata only when `npm run status:check` is run.
+AS Adventurer keeps its active state in `project-status.json`, `next-steps.json`, and `repository-checks.json`. These records do not affect overlay runtime behavior; `npm run status:check` reads them together with local Git metadata.
 
 ## Current state
 
@@ -17,34 +8,57 @@ Phase 2 AI Actors is implemented on `agent/ai-actors-control-panel` in draft PR 
 
 Completed and live-tested areas include:
 
-- actor creation and management;
-- actor expression and speaking control;
-- Type 1 and Type 2 actor emotes;
-- nested sub-animations;
-- actor reset behavior;
+- secure LAN machine registration, private assets, and authenticated OBS URLs;
+- AI Actor creation, lifecycle, expressions, speaking state, and actor-scoped emotes;
 - Streamer.bot helper compilation and all seven named methods;
-- cross-action speech-session storage and stale-session protection;
-- OBS rendering through the certificate-valid `https://localhost:3000` origin;
-- overlay reconnection and recovery behavior;
-- the local checkout and repository handoff workflow;
-- the first production actor mapping for `gnisu`; and
-- serial production routing for `gnisu` and `dascribe`, plus the unmapped OpenAI fallback.
+- overlay recovery and signed-media playback compatibility;
+- production TTS routing for `gnisu` and `dascribe` through the accepted serial queue;
+- unmapped OpenAI fallback playback;
+- the LAN-enabled Windows package build; and
+- a clean-folder remote-LAN smoke test with browser and OBS clients on another computer.
 
-Production TTS intentionally uses one serial queue. One synthesized voice completes its actor start, blocking playback, and matching actor stop before the next queued voice begins. This is an accepted stream-design decision that keeps dialogue clean and understandable. Overlapping production speech and concurrent same-actor cleanup are therefore not release requirements.
+Production TTS intentionally uses one serial queue. One synthesized voice completes its actor start, blocking playback, and matching stop before the next voice begins. Overlap is not a release requirement.
 
-The immediate next step is the LAN-enabled Windows package build:
+## Package validation
 
-```powershell
-npm run build-release:lan
+The Windows package build produced:
+
+- `ASAdventurer.exe`;
+- `ASAdventurerLAN.exe`;
+- both checksum files;
+- both launchers;
+- certificate setup files;
+- LAN, actor, and Streamer.bot documentation;
+- `streamerbot/ASAdventurerActorHelper.cs`; and
+- `release/ASAdventurer.zip` at 30.5 MB.
+
+The Archiver 8 ZIP paths were corrected to use `ZipArchive`, and both the initial and final ZIP stages passed.
+
+Recorded executable checksums:
+
+```text
+ASAdventurer.exe
+52fd671cab5767289e3218057024d0d3a3e4662d104a8369933ac529f8e8aa9b
+
+ASAdventurerLAN.exe
+ef35d7d20cca29ed2290ab6ae44f850c6292c66c541e5d661e942857928b14eb
 ```
 
-After the package build, the remaining release-validation gate is a clean-folder smoke test. PR #8 stays draft until the owner explicitly approves marking it ready.
+## Clean-folder smoke test
 
-See `project-status.json` for the complete status record and `next-steps.json` for the ordered roadmap.
+The release ZIP was extracted outside the repository and run with the server on one computer and browser/OBS clients on another LAN computer.
+
+The remote browser loaded the main and actor overlays. OBS initially showed transparent sources because the generated LAN root certificate was not trusted on the OBS computer. Installing the generated root certificate there and restarting browser and OBS processes restored trusted HTTPS rendering. The owner confirmed the main and actor overlays were working.
+
+The optional `Queri` demo model was not bundled because it was absent from `public/assets`; a restored, uploaded, or global model is required for visible character media.
+
+## Immediate next step
+
+Release validation is complete. The only immediate roadmap item is the explicit owner decision for PR #8 promotion into `agent/lan-mode`.
+
+PR #8 remains **open, draft, mergeable, unmerged**, and has no reported GitHub status contexts. It must not be marked ready, auto-merged, or merged without an explicit owner instruction.
 
 ## Active checkout contract
-
-The current repository contract is:
 
 ```text
 Repository:     XorishiTtv/angelssword-adventurers-overlay
@@ -55,110 +69,21 @@ Expected head:  origin/agent/ai-actors-control-panel
 Expected base:  origin/agent/lan-mode
 ```
 
-The exact head SHA changes whenever a commit is added. After `git fetch --prune origin`, the fetched remote-tracking ref is the source of truth. Local `HEAD` must equal `origin/agent/ai-actors-control-panel` after a successful update.
-
-Run:
+After fetching, local `HEAD` must equal the expected remote head:
 
 ```powershell
+git status --short
+git fetch --prune origin
+git switch agent/ai-actors-control-panel
+git pull --ff-only origin agent/ai-actors-control-panel
+npm ci
 npm run status:check
 ```
 
-To fetch first:
-
-```powershell
-npm run status:check -- --fetch
-```
-
-The checker verifies:
-
-- all project JSON files parse;
-- their update dates agree;
-- branch, base, and pull-request records agree;
-- the current branch is correct;
-- local and remote head SHAs match;
-- ahead and behind are both zero;
-- the expected base is an ancestor of `HEAD`;
-- the worktree is clean; and
-- exactly one roadmap item is marked `next`.
-
-## GitHub status checks
-
-At the latest recorded snapshot, PR #8 was open, draft, and mergeable, but GitHub reported no commit status contexts for its head.
-
-“No reported checks” does not mean a CI suite passed. It means no GitHub commit statuses were configured or attached to the observed head. Local checks, harness results, and documented live tests remain the release evidence until CI is added.
-
-With GitHub CLI installed:
-
-```powershell
-gh pr view 8 --repo XorishiTtv/angelssword-adventurers-overlay --json number,state,isDraft,mergeable,baseRefName,baseRefOid,headRefName,headRefOid,url
-gh pr checks 8 --repo XorishiTtv/angelssword-adventurers-overlay
-```
-
-## Standard work handoff
-
-Every handoff should include:
-
-```text
-Repository:
-Working branch:
-Base branch:
-Pull request:
-PR state:
-Draft:
-Mergeable:
-Expected remote head SHA:
-Expected base SHA:
-GitHub status contexts:
-Local status command:
-Remaining next step:
-```
-
-Read the exact remote head after all commits for the handoff are complete. Do not reuse an older SHA from a previous message or document.
-
-## Updating the JSON files
-
-Use these rules whenever project work changes state:
-
-1. Update `updated_at` in `project-status.json`, `next-steps.json`, and `repository-checks.json`.
-2. Add completed functionality and validation evidence to `project-status.json`.
-3. Move completed roadmap items out of the active queue or mark them `complete` in `next-steps.json`.
-4. Keep exactly one immediate item marked `next`.
-5. Add concise acceptance criteria before beginning a new roadmap item.
-6. Update branch, base, PR, and expected refs in `repository-checks.json` when the active work changes.
-7. Add a user-visible summary to `CHANGELOG.md` when behavior, setup, security, packaging, workflow, or documentation changes.
-8. Run `npm run status:check` after fetching and before beginning the next work item.
-
-Suggested roadmap status values are:
-
-- `next` — the immediate recommended task;
-- `planned` — accepted work that is not started;
-- `in-progress` — active work;
-- `blocked` — waiting on another item or approval;
-- `complete` — finished and validated; and
-- `deferred` — intentionally postponed.
+The checker verifies matching project dates, branch/base/PR consistency, current branch, remote-head equality, ahead/behind, clean worktree, base ancestry, and exactly one `next` roadmap item.
 
 ## Security rules
 
-Never place any of the following in status, roadmap, checkout, changelog, screenshots, or examples:
+Never place machine tokens, actor tokens, complete authenticated OBS URLs, certificate private keys, or certificate passwords in repository records, logs, screenshots, or examples.
 
-- machine tokens;
-- actor tokens;
-- complete authenticated OBS URLs;
-- certificate private keys; or
-- certificate password files.
-
-Use placeholder actor IDs and redacted URLs in documentation. Treat Streamer.bot persisted globals and backups containing actor tokens as sensitive data.
-
-## Documentation map
-
-- `README.md` — general project overview and quick start.
-- `LOCAL_CHECKOUT.md` — clone, update, expected-head verification, status checks, and troubleshooting.
-- `repository-checks.json` — machine-readable repository and handoff policy.
-- `LAN_SETUP.md` — secure LAN installation, machine registration, assets, OBS, certificates, backups, and release builds.
-- `AI_ACTOR_CONTROL_PANEL.md` — actor creation, credentials, emotes, recovery, endpoints, and security.
-- `STREAMERBOT_AI_ACTORS.md` — helper installation, arguments, TTS sessions, emotes, outputs, live-test checklist, and troubleshooting.
-- `streamerbot/PRODUCTION_TTS_INTEGRATION.md` — one-actor-first production wiring, completion/error cleanup, fallback behavior, and acceptance checks.
-- `streamerbot/MULTI_ACTOR_TTS_TEST.md` — serial multi-actor production routing, queue isolation, and unmapped fallback validation.
-- `streamerbot/actor-tts-mapping.example.json` — documentation-only identity-to-actor worksheet containing no raw token values.
-- `AI_ACTOR_MVP.md` — lower-level actor API and MVP design notes.
-- `CHANGELOG.md` — user-visible changes grouped by development state.
+For remote Windows browser or OBS computers, install only the generated root certificate and restart browser processes. Keep the server PFX and password file private on the host.
