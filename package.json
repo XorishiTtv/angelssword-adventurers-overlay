@@ -6,7 +6,10 @@
   "license": "MIT",
   "scripts": {
     "start": "node server.js",
-    "placeholders": "node generate-placeholders.js"
+    "start:lan": "node lan-global-server.js",
+    "placeholders": "node generate-placeholders.js",
+    "status:check": "node scripts/check-project-status.js",
+    "build-release:lan": "node build-release-with-lan.js"
   },
   "dependencies": {
     "express": "^4.21.0",

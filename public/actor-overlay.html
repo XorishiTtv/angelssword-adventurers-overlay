@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AS Adventurer</title>
+  <title>AS Adventurer — AI Actor</title>
   <link rel="stylesheet" href="overlay.css">
-  <script src="machine-url-normalize.js"></script>
+  <script src="actor-client.js"></script>
 </head>
 <body>
   <div id="overlay-container">
-    <!-- Asset layers - all preloaded, toggled via CSS -->
     <div class="asset-layer" id="layer-neutral_idle"></div>
     <div class="asset-layer" id="layer-neutral_speaking"></div>
     <div class="asset-layer" id="layer-happy_idle"></div>
@@ -23,18 +22,13 @@
     <div class="asset-layer" id="layer-emote"></div>
   </div>
 
-  <!-- Debug overlay (hidden by default, toggle with ?debug=1) -->
   <div id="debug-panel">
     <div id="debug-state">--</div>
     <div id="debug-expression">--</div>
     <div id="debug-voice">--</div>
-    <div id="debug-mic-level">
-      <div id="debug-mic-bar"></div>
-    </div>
+    <div id="debug-mic-level"><div id="debug-mic-bar"></div></div>
   </div>
 
-  <script src="machine-media-url-compat.js"></script>
-  <script src="machine-model-sync.js"></script>
   <script src="overlay-runtime.js"></script>
   <script src="overlay.js"></script>
   <script src="overlay-startup-guard.js"></script>
