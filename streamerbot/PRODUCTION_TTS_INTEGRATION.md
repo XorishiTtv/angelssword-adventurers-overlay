@@ -2,7 +2,23 @@
 
 This runbook connects the live-tested `ASAdventurerActorHelper.cs` methods to an existing Streamer.bot TTS workflow without replacing the current TTS generator or playback actions.
 
-The integration should begin with one actor identity. Add the remaining identities only after the first production path passes.
+The integration begins with one actor identity. Add the remaining identities only after the first production path passes.
+
+## Current checkpoint
+
+The first production identity, `gnisu`, passed the complete production lifecycle on 2026-08-01:
+
+```text
+StartTts
+→ actor entered speaking
+→ Kokoro direct blocking playback completed
+→ StopTts
+→ actor returned to idle
+```
+
+The successful run used the repository helper that posts directly to `/api/actors/<actorId>/state`. The earlier duplicate File Watcher playback and stale capability-discovery helper problems were removed from the successful path.
+
+The next gate is documented in `streamerbot/MULTI_ACTOR_TTS_TEST.md`.
 
 ## Preconditions
 
@@ -165,6 +181,21 @@ speaking timeout
 
 All identities may call the same compiled helper. Sessions are actor-scoped, so one actor's stop request does not stop another actor.
 
+## Playback ownership requirement
+
+The production action must be the sole playback owner for generated audio that it invokes directly.
+
+For direct Kokoro or OpenAI playback:
+
+```text
+Use ttsAudioPath
+Enable finish-playing-before-continuing
+Disable the matching generated-file File Watcher trigger
+Do not also invoke a fullPath-based playback path for the same file
+```
+
+This guarantees that `StopTts()` runs after the audio actually finishes rather than after a duplicate or estimated playback path.
+
 ## First production checkpoint
 
 Run one real TTS request for the first mapped actor and verify:
@@ -181,7 +212,20 @@ An unmapped TTS identity still used the original overlay path
 
 Then run two back-to-back requests for the same actor. Confirm a delayed completion from the older request cannot stop the newer request.
 
-## Information to record after the checkpoint
+The `gnisu` mapped path passed the normal production start, blocking Kokoro playback, and stop cycle. Multi-actor overlap, unmapped fallback, and production stale-session isolation remain in the next gate.
+
+## Stage 6: multi-actor production isolation
+
+Follow `streamerbot/MULTI_ACTOR_TTS_TEST.md` to:
+
+- map a second identity to a different actor;
+- verify each identity activates only its assigned actor;
+- overlap the two actors and verify one completion cannot stop the other;
+- repeat back-to-back requests for stale-session protection;
+- exercise expression and emote actor scope; and
+- verify an unmapped identity remains on the original path.
+
+## Information to record after a checkpoint
 
 Record only non-secret results:
 
