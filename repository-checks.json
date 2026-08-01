@@ -14,7 +14,7 @@
     "expected_base_rule": "origin/agent/lan-mode must be an ancestor of local HEAD."
   },
   "github_snapshot": {
-    "observed_at": "2026-08-01T01:37:00-04:00",
+    "observed_at": "2026-08-01T02:30:00-04:00",
     "pull_request_state": "open",
     "draft": true,
     "mergeable": true,
