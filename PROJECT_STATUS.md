@@ -4,42 +4,20 @@ AS Adventurer keeps its active state in `project-status.json`, `next-steps.json`
 
 ## Current state
 
-Phase 2 AI Actors was merged through PR #8 into `agent/lan-mode` at merge commit:
+The secure LAN and AI Actor integration is merged into `main`.
 
-```text
-670e108f695ca76ec53b032a6bff51b562ef20d3
-```
+- PR #8 merged Phase 2 AI Actors into `agent/lan-mode` at `670e108f695ca76ec53b032a6bff51b562ef20d3`.
+- PR #1 merged the combined integration into `main` at `a7c17ed75aafe34dff62d88345a75278665fd564`.
+- PR #1 was marked ready and merged only after separate explicit owner approvals.
+- No auto-merge was enabled.
 
-The active integration pull request is draft PR #1 from `agent/lan-mode` into `main`.
+Completed and validated areas include secure LAN registration and private assets, shared global models, AI Actor lifecycle and emotes, Streamer.bot actor controls, serial production TTS routing, overlay recovery, Windows packaging, clean-folder remote-LAN operation, and the combined post-merge regression.
 
-Completed and live-tested areas include:
-
-- secure LAN machine registration, private assets, shared global models, and authenticated OBS URLs;
-- AI Actor creation, lifecycle, expressions, speaking state, actor-scoped emotes, and nested sub-animations;
-- Streamer.bot helper compilation and all seven named methods;
-- overlay recovery and signed-media playback compatibility;
-- production TTS routing for `gnisu` and `dascribe` through the accepted serial queue;
-- unmapped OpenAI fallback playback;
-- the LAN-enabled Windows package build;
-- a clean-folder remote-LAN smoke test with browser and OBS clients on another computer; and
-- the post-merge combined LAN regression on `agent/lan-mode`.
-
-Production TTS intentionally uses one serial queue. One synthesized voice completes its actor start, blocking playback, and matching stop before the next voice begins. Overlap is not a release requirement.
+Production TTS intentionally uses one serial queue. One synthesized voice completes its actor start, blocking playback, and matching stop before the next voice begins.
 
 ## Package validation
 
-The Windows package build produced:
-
-- `ASAdventurer.exe`;
-- `ASAdventurerLAN.exe`;
-- both checksum files;
-- both launchers;
-- certificate setup files;
-- LAN, actor, and Streamer.bot documentation;
-- `streamerbot/ASAdventurerActorHelper.cs`; and
-- `release/ASAdventurer.zip` at 30.5 MB.
-
-The Archiver 8 ZIP paths use `ZipArchive`, and both the initial and final ZIP stages passed.
+The Windows package build produced both executables, both checksum files, both launchers, certificate setup files, LAN and actor documentation, the Streamer.bot helper source, and `release/ASAdventurer.zip` at 30.5 MB.
 
 Recorded executable checksums:
 
@@ -51,46 +29,48 @@ ASAdventurerLAN.exe
 ef35d7d20cca29ed2290ab6ae44f850c6292c66c541e5d661e942857928b14eb
 ```
 
-## Clean-folder and combined regression validation
+The optional `Queri` demo model was not bundled because it was absent from `public/assets`; a restored, uploaded, or global model is required for visible character media.
 
-The release ZIP was extracted outside the repository and run with the server on one computer and browser/OBS clients on another LAN computer.
+## Validation summary
 
-The remote browser loaded the main and actor overlays. OBS initially showed transparent sources because the generated LAN root certificate was not trusted on the OBS computer. Installing the generated root certificate there and restarting browser and OBS processes restored trusted HTTPS rendering.
+The owner confirmed the completed integration worked across:
 
-After PR #8 merged, the owner confirmed the combined `agent/lan-mode` branch was in working order across:
-
-- the localhost-only default launcher and ordinary control panel/overlay;
+- the localhost-only default launcher and ordinary control panel and overlay;
 - secure LAN certificate trust, registration, global models, private uploads, model selection, and emotes;
 - AI Actor creation, overlays, expressions, speaking state, reset, emotes, and nested sub-animations;
 - Streamer.bot actor API access and mapped serial TTS cleanup; and
 - remote main and actor OBS rendering plus LAN restart recovery.
 
-The optional `Queri` demo model was not bundled because it was absent from `public/assets`; a restored, uploaded, or global model is required for visible character media.
+Remote Windows browser and OBS computers must trust the generated LAN root certificate and restart browser processes. Keep the server certificate bundle and password private on the host.
 
 ## Immediate next step
 
-Combined regression validation is complete. The only immediate roadmap item is the explicit owner decision for PR #1 promotion to `main`.
+Core implementation, package validation, regression testing, and mainline promotion are complete. The only immediate roadmap item is an owner decision on release administration:
 
-PR #1 remains **open, draft, mergeable, and unmerged**. Marking it ready and merging it are separate actions and each requires an explicit owner instruction.
+- choose a version and Git tag;
+- decide whether to publish the validated Windows archive as a GitHub Release; and
+- decide whether the completed integration branches should be retained or deleted.
+
+A quantitative OBS CPU/GPU baseline remains optional.
 
 ## Active checkout contract
 
 ```text
 Repository:     XorishiTtv/angelssword-adventurers-overlay
-Working branch: agent/lan-mode
+Working branch: main
 Base branch:    main
-Pull request:   #1
-Expected head:  origin/agent/lan-mode
+Merged PR:      #1
+Expected head:  origin/main
 Expected base:  origin/main
 ```
 
-After fetching, local `HEAD` must equal the expected remote head:
+Update and verify the local checkout with:
 
 ```powershell
 git status --short
 git fetch --prune origin
-git switch agent/lan-mode
-git pull --ff-only origin agent/lan-mode
+git switch main
+git pull --ff-only origin main
 npm ci
 npm run status:check
 ```
@@ -99,10 +79,8 @@ The checker verifies matching project dates, branch/base/PR consistency, current
 
 ## GitHub checks
 
-At the recorded regression-complete snapshot, PR #1 was open, draft, and mergeable, with no reported commit status contexts. No CI pass is being claimed; documented local and live validation remains the release evidence.
+GitHub reported no commit status contexts for the PR #1 merge commit, so no CI pass is claimed. The recorded local, package, browser, OBS, and Streamer.bot validation remains the release evidence.
 
 ## Security rules
 
-Never place machine tokens, actor tokens, complete authenticated OBS URLs, certificate private keys, or certificate passwords in repository records, logs, screenshots, or examples.
-
-For remote Windows browser or OBS computers, install only the generated root certificate and restart browser processes. Keep the server PFX and password file private on the host.
+Never place live credentials, complete authenticated OBS addresses, certificate private keys, or certificate passwords in repository records, logs, screenshots, or examples.
