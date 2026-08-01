@@ -8,20 +8,13 @@
     {
       "order": 1,
       "id": "local-checkout-verification",
-      "title": "Update and verify the local working checkout",
+      "title": "Update and verify the feature checkout",
       "status": "complete",
       "guide": "LOCAL_CHECKOUT.md",
       "completed_at": "2026-07-29T09:53:00-04:00",
       "verified_head_sha": "23a36f3c5842c7bbc7d983dad073011ba9e85118",
       "verified_base_sha": "ea9c4317e860c14199ad7547cc579000161de4ba",
-      "completion_note": "The recorded SHA is historical; fetch the remote ref for the current head.",
-      "commands": [
-        "git fetch --prune origin",
-        "git switch agent/ai-actors-control-panel",
-        "git pull --ff-only origin agent/ai-actors-control-panel",
-        "npm ci",
-        "npm run status:check"
-      ]
+      "completion_note": "This is a historical feature-branch checkout. The active checkout contract is now agent/lan-mode against main."
     },
     {
       "order": 2,
@@ -75,37 +68,45 @@
       "title": "Update PR #8 after release validation",
       "status": "complete",
       "completed_at": "2026-08-01T03:59:00-04:00",
-      "completion_note": "Release validation and remaining promotion steps were documented. PR #8 intentionally remains draft and unmerged."
+      "completion_note": "Release validation and remaining promotion steps were documented before promotion."
     },
     {
       "order": 7,
       "id": "merge-pr-8",
-      "title": "Owner decision for PR #8 promotion into agent/lan-mode",
-      "status": "next",
-      "blocked_by": [],
+      "title": "Promote Phase 2 AI Actors into agent/lan-mode",
+      "status": "complete",
+      "completed_at": "2026-08-01T04:11:55-04:00",
       "requires_explicit_owner_approval": true,
-      "notes": "Do not mark PR #8 ready, enable auto-merge, or merge it without an explicit owner instruction."
+      "merge_commit_sha": "670e108f695ca76ec53b032a6bff51b562ef20d3",
+      "completion_note": "The owner explicitly approved marking PR #8 ready and then merging it. PR #8 is closed and merged into agent/lan-mode."
     },
     {
       "order": 8,
       "id": "combined-lan-regression",
       "title": "Retest the combined LAN integration branch",
-      "status": "blocked",
-      "blocked_by": ["merge-pr-8"],
+      "status": "next",
+      "blocked_by": [],
+      "working_branch": "agent/lan-mode",
+      "base_branch": "main",
+      "pull_request": 1,
       "acceptance_criteria": [
-        "Localhost mode remains unchanged",
-        "Secure LAN machine registration and private assets work",
-        "AI Actors and Streamer.bot controls work",
-        "OBS main and actor sources recover after restart"
+        "The default launcher remains localhost-only and the normal control panel and overlay still work",
+        "Secure LAN certificate setup and trusted remote HTTPS access work",
+        "Machine registration, global models, private uploads, model selection, and emotes work",
+        "AI Actor creation, actor overlays, expressions, speaking state, reset, emotes, and nested sub-animations work",
+        "Streamer.bot reaches the actor API and mapped serial TTS returns each actor to idle",
+        "Main and actor OBS sources render remotely and recover after the LAN process restarts",
+        "No live machine token, actor token, complete authenticated OBS URL, certificate key, or password is recorded"
       ]
     },
     {
       "order": 9,
       "id": "merge-pr-1",
-      "title": "Promote secure LAN mode to main",
+      "title": "Promote the combined secure LAN integration to main",
       "status": "blocked",
       "blocked_by": ["combined-lan-regression"],
-      "requires_explicit_owner_approval": true
+      "requires_explicit_owner_approval": true,
+      "notes": "After regression validation, marking PR #1 ready and merging it each require explicit owner instructions."
     },
     {
       "order": 10,
