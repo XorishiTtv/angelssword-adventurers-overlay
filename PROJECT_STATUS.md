@@ -10,7 +10,7 @@ Phase 2 AI Actors was merged through PR #8 into `agent/lan-mode` at merge commit
 670e108f695ca76ec53b032a6bff51b562ef20d3
 ```
 
-The active integration pull request is now draft PR #1 from `agent/lan-mode` into `main`.
+The active integration pull request is draft PR #1 from `agent/lan-mode` into `main`.
 
 Completed and live-tested areas include:
 
@@ -20,8 +20,9 @@ Completed and live-tested areas include:
 - overlay recovery and signed-media playback compatibility;
 - production TTS routing for `gnisu` and `dascribe` through the accepted serial queue;
 - unmapped OpenAI fallback playback;
-- the LAN-enabled Windows package build; and
-- a clean-folder remote-LAN smoke test with browser and OBS clients on another computer.
+- the LAN-enabled Windows package build;
+- a clean-folder remote-LAN smoke test with browser and OBS clients on another computer; and
+- the post-merge combined LAN regression on `agent/lan-mode`.
 
 Production TTS intentionally uses one serial queue. One synthesized voice completes its actor start, blocking playback, and matching stop before the next voice begins. Overlap is not a release requirement.
 
@@ -50,27 +51,27 @@ ASAdventurerLAN.exe
 ef35d7d20cca29ed2290ab6ae44f850c6292c66c541e5d661e942857928b14eb
 ```
 
-## Clean-folder smoke test
+## Clean-folder and combined regression validation
 
 The release ZIP was extracted outside the repository and run with the server on one computer and browser/OBS clients on another LAN computer.
 
-The remote browser loaded the main and actor overlays. OBS initially showed transparent sources because the generated LAN root certificate was not trusted on the OBS computer. Installing the generated root certificate there and restarting browser and OBS processes restored trusted HTTPS rendering. The owner confirmed the main and actor overlays were working.
+The remote browser loaded the main and actor overlays. OBS initially showed transparent sources because the generated LAN root certificate was not trusted on the OBS computer. Installing the generated root certificate there and restarting browser and OBS processes restored trusted HTTPS rendering.
+
+After PR #8 merged, the owner confirmed the combined `agent/lan-mode` branch was in working order across:
+
+- the localhost-only default launcher and ordinary control panel/overlay;
+- secure LAN certificate trust, registration, global models, private uploads, model selection, and emotes;
+- AI Actor creation, overlays, expressions, speaking state, reset, emotes, and nested sub-animations;
+- Streamer.bot actor API access and mapped serial TTS cleanup; and
+- remote main and actor OBS rendering plus LAN restart recovery.
 
 The optional `Queri` demo model was not bundled because it was absent from `public/assets`; a restored, uploaded, or global model is required for visible character media.
 
 ## Immediate next step
 
-Run the combined LAN regression test from `agent/lan-mode` before promoting PR #1.
+Combined regression validation is complete. The only immediate roadmap item is the explicit owner decision for PR #1 promotion to `main`.
 
-The regression must confirm:
-
-- the default launcher remains localhost-only and the ordinary overlay still works;
-- secure LAN certificate setup, machine registration, global models, private uploads, model selection, and emotes work;
-- AI Actor management, actor overlays, expressions, speaking state, reset, emotes, and nested sub-animations work;
-- Streamer.bot reaches the actor API and mapped serial TTS returns each actor to idle; and
-- main and actor OBS sources render remotely and recover after a LAN process restart.
-
-PR #1 remains **open, draft, mergeable, and unmerged**. Marking it ready or merging it requires separate explicit owner instructions after regression validation.
+PR #1 remains **open, draft, mergeable, and unmerged**. Marking it ready and merging it are separate actions and each requires an explicit owner instruction.
 
 ## Active checkout contract
 
@@ -98,7 +99,7 @@ The checker verifies matching project dates, branch/base/PR consistency, current
 
 ## GitHub checks
 
-At the recorded post-merge snapshot, PR #1 was open, draft, and mergeable, with no reported commit status contexts. No CI pass is being claimed; documented local and live regression evidence remains required.
+At the recorded regression-complete snapshot, PR #1 was open, draft, and mergeable, with no reported commit status contexts. No CI pass is being claimed; documented local and live validation remains the release evidence.
 
 ## Security rules
 
