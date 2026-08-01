@@ -71,24 +71,36 @@
       "order": 3,
       "id": "end-to-end-multi-actor-tts-test",
       "title": "Run an end-to-end multi-actor TTS isolation test",
-      "status": "next",
+      "status": "complete",
       "guide": "streamerbot/MULTI_ACTOR_TTS_TEST.md",
-      "blocked_by": [],
+      "completed_at": "2026-08-01T02:19:08-04:00",
+      "validated_identities": [
+        "gnisu",
+        "dascribe"
+      ],
+      "completion_note": "Both mapped identities used distinct actors and completed isolated StartTts, direct blocking Kokoro playback, and StopTts lifecycles. An unmapped broadcaster identity retained direct blocking OpenAI playback. The owner accepted the existing single queue as intentional stream behavior, so overlap and concurrent same-actor cleanup are not applicable production requirements.",
+      "design_decision": {
+        "production_queue": "single-serial-queue",
+        "reason": "Keep live streams clean and understandable by allowing one synthesized voice at a time.",
+        "overlap_test": "not-applicable-by-design",
+        "concurrent_same_actor_cleanup_test": "not-applicable-by-design",
+        "underlying_helper_protection": "Actor-scoped stale-session protection was already live-tested independently."
+      },
       "test_sequence": [
         "Map a second production identity to a different actor",
         "Verify each mapped identity activates only its assigned actor",
-        "Overlap both mapped identities and confirm one completion does not stop the other actor",
-        "Run back-to-back requests for one actor and confirm stale-session protection",
-        "Exercise actor-scoped expression and emote behavior",
-        "Run an unmapped identity and confirm the original fallback path remains unchanged"
+        "Submit mapped requests close together and confirm the queue processes them one at a time",
+        "Verify each actor returns to idle before the next queued mapped identity begins",
+        "Run an unmapped identity and confirm the original direct blocking fallback path remains unchanged",
+        "Retain the previously validated actor-scoped expression, emote, and stale-session helper behavior"
       ],
       "acceptance_criteria": [
         "Every configured AI voice activates only its assigned actor",
         "Speaking starts before audible playback and returns to idle afterward",
-        "Overlapping actors remain independent",
-        "Expressions and emotes remain actor-scoped",
-        "Back-to-back requests preserve stale-session protection",
+        "The production queue intentionally prevents overlapping voices",
+        "Queued mapped identities remain isolated across sequential playback",
         "An unmapped identity uses the existing non-actor path",
+        "Actor-scoped expression, emote, and stale-session helper checks remain passed",
         "No raw actor token appears in logs or repository files"
       ]
     },
@@ -96,7 +108,7 @@
       "order": 4,
       "id": "packaged-windows-build",
       "title": "Build the LAN-enabled Windows release",
-      "status": "planned",
+      "status": "next",
       "command": "npm run build-release:lan",
       "acceptance_criteria": [
         "The standard and LAN executables build successfully",
@@ -128,7 +140,6 @@
       "title": "Update PR #8 after release validation",
       "status": "blocked",
       "blocked_by": [
-        "end-to-end-multi-actor-tts-test",
         "clean-folder-smoke-test"
       ],
       "acceptance_criteria": [
