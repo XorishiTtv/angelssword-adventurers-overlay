@@ -4,13 +4,13 @@
   "repository": "XorishiTtv/angelssword-adventurers-overlay",
   "updated_at": "2026-08-01",
   "active_work": {
-    "phase": "Phase 2 - AI Actors",
-    "branch": "agent/ai-actors-control-panel",
-    "base_branch": "agent/lan-mode",
-    "pull_request": 8,
+    "phase": "Combined secure LAN integration",
+    "branch": "agent/lan-mode",
+    "base_branch": "main",
+    "pull_request": 1,
     "pull_request_state": "draft",
-    "release_state": "release-validation-complete-owner-promotion-pending",
-    "current_task": "owner-approval-pr-8-promotion"
+    "release_state": "combined-integration-regression-pending",
+    "current_task": "combined-lan-regression"
   },
   "repository_handoff": {
     "policy_file": "repository-checks.json",
@@ -18,10 +18,11 @@
     "dependency_install_command": "npm ci",
     "local_check_command": "npm run status:check",
     "fetch_and_check_command": "npm run status:check -- --fetch",
-    "expected_head_ref": "origin/agent/ai-actors-control-panel",
-    "expected_base_ref": "origin/agent/lan-mode",
+    "expected_head_ref": "origin/agent/lan-mode",
+    "expected_base_ref": "origin/main",
     "github_status_snapshot": {
-      "observed_at": "2026-08-01T03:59:00-04:00",
+      "observed_at": "2026-08-01T04:23:00-04:00",
+      "pull_request": 1,
       "pull_request_state": "open",
       "draft": true,
       "mergeable": true,
@@ -106,13 +107,24 @@
         "Installing the generated root certificate and restarting browser and OBS processes restored trusted HTTPS rendering",
         "The owner confirmed the main and actor overlays were working"
       ]
+    },
+    {
+      "id": "phase-2-pr-8-merge",
+      "title": "Merge Phase 2 AI Actors into the secure LAN integration branch",
+      "status": "complete-by-owner-approval",
+      "details": [
+        "PR #8 was marked ready only after explicit owner approval",
+        "PR #8 merged into agent/lan-mode at merge commit 670e108f695ca76ec53b032a6bff51b562ef20d3",
+        "PR #1 now contains the combined secure LAN and AI Actor work",
+        "PR #1 remains draft and unmerged"
+      ]
     }
   ],
   "validation": [
     {
       "id": "main-and-actor-overlays",
       "status": "passed",
-      "details": "Main and actor overlays rendered in browser and OBS on same-computer localhost and remote secure-LAN setups."
+      "details": "Main and actor overlays rendered in browser and OBS on same-computer localhost and remote secure-LAN setups before the integration merge."
     },
     {
       "id": "actor-emote-playback",
@@ -139,6 +151,16 @@
       "id": "clean-folder-smoke-test",
       "status": "passed-by-owner-confirmation",
       "details": "The extracted package served remote browser and OBS clients across the LAN. Main and actor OBS overlays rendered after the generated root certificate was trusted on the OBS computer."
+    },
+    {
+      "id": "phase-2-pr-8-merge",
+      "status": "passed",
+      "details": "PR #8 merged into agent/lan-mode using the verified source head 03ba6e4a1b0b779bc801597704832c499336558b."
+    },
+    {
+      "id": "combined-lan-regression",
+      "status": "next",
+      "details": "Retest localhost mode, secure LAN registration and assets, AI Actors, Streamer.bot controls, and OBS restart recovery from agent/lan-mode before PR #1 promotion."
     }
   ],
   "known_limits": [
@@ -156,7 +178,7 @@
     },
     {
       "id": "github-status-contexts",
-      "details": "GitHub reports no commit status contexts for PR #8; no CI pass is claimed."
+      "details": "GitHub reports no commit status contexts for PR #1; no CI pass is claimed."
     },
     {
       "id": "default-demo-model",
@@ -167,8 +189,8 @@
       "details": "Each remote Windows browser or OBS computer must trust the generated LAN root certificate and restart browser processes."
     },
     {
-      "id": "merge-state",
-      "details": "PR #8 remains draft and unmerged. Marking it ready or merging requires explicit owner approval."
+      "id": "promotion-state",
+      "details": "PR #8 is merged. PR #1 remains draft and unmerged; marking it ready or merging it requires separate explicit owner approval after combined regression validation."
     }
   ],
   "security": {
