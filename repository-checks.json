@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "project": "AS Adventurer",
   "repository": "XorishiTtv/angelssword-adventurers-overlay",
-  "updated_at": "2026-07-29",
+  "updated_at": "2026-08-01",
   "active_checkout": {
     "remote": "origin",
     "branch": "agent/ai-actors-control-panel",
@@ -14,13 +14,13 @@
     "expected_base_rule": "origin/agent/lan-mode must be an ancestor of local HEAD."
   },
   "github_snapshot": {
-    "observed_at": "2026-07-29T09:53:00-04:00",
+    "observed_at": "2026-08-01T01:37:00-04:00",
     "pull_request_state": "open",
     "draft": true,
     "mergeable": true,
     "reported_commit_status_contexts": 0,
     "reported_commit_status": "none-reported",
-    "note": "GitHub reported no commit status contexts for the observed PR head. Local repository checks remain required."
+    "note": "GitHub reported no commit status contexts for the observed PR head. Local repository checks and live validation remain required."
   },
   "last_verified_checkout": {
     "verified_at": "2026-07-29T09:53:00-04:00",
