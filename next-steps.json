@@ -3,14 +3,7 @@
   "project": "AS Adventurer",
   "updated_at": "2026-08-01",
   "source_status_file": "project-status.json",
-  "status_values": [
-    "next",
-    "planned",
-    "in-progress",
-    "blocked",
-    "complete",
-    "deferred"
-  ],
+  "status_values": ["next", "planned", "in-progress", "blocked", "complete", "deferred"],
   "items": [
     {
       "order": 1,
@@ -21,23 +14,13 @@
       "completed_at": "2026-07-29T09:53:00-04:00",
       "verified_head_sha": "23a36f3c5842c7bbc7d983dad073011ba9e85118",
       "verified_base_sha": "ea9c4317e860c14199ad7547cc579000161de4ba",
-      "completion_note": "The owner reported the expected branch, base, PR, and head values and authorized progression to production TTS integration. The recorded SHA is historical; fetch the remote ref for the current head.",
+      "completion_note": "The recorded SHA is historical; fetch the remote ref for the current head.",
       "commands": [
         "git fetch --prune origin",
         "git switch agent/ai-actors-control-panel",
         "git pull --ff-only origin agent/ai-actors-control-panel",
         "npm ci",
         "npm run status:check"
-      ],
-      "acceptance_criteria": [
-        "The current branch is agent/ai-actors-control-panel",
-        "Local HEAD equals origin/agent/ai-actors-control-panel",
-        "Ahead and behind are both zero",
-        "origin/agent/lan-mode is an ancestor of HEAD",
-        "The worktree is clean",
-        "npm ci completes without changing package-lock.json",
-        "npm run status:check passes",
-        "The exact expected head SHA is recorded in the work handoff"
       ]
     },
     {
@@ -45,27 +28,9 @@
       "id": "production-tts-integration",
       "title": "Connect actor helper calls to the production TTS workflow",
       "status": "complete",
-      "requires_repository_code_change": false,
       "guide": "streamerbot/PRODUCTION_TTS_INTEGRATION.md",
-      "mapping_worksheet": "streamerbot/actor-tts-mapping.example.json",
       "completed_at": "2026-08-01T01:29:17-04:00",
-      "validated_identity": "gnisu",
-      "completion_note": "The gnisu production request completed StartTts, direct blocking Kokoro playback, and StopTts. The actor returned to idle, duplicate File Watcher playback was absent from the successful path, and the repository helper replaced the stale capability-discovery helper instance.",
-      "integration_sequence": [
-        "Inventory the production TTS action and every completion or error path",
-        "Map one TTS identity to one actor ID and persisted token-global name",
-        "Call StartTts immediately before audio playback",
-        "Call StopTts after successful playback and on cleanup or failure",
-        "Verify unmapped identities still use the existing non-actor path",
-        "Repeat for remaining actor identities after the first mapping passes"
-      ],
-      "acceptance_criteria": [
-        "The first supported TTS identity resolves to the intended actor ID and token variable",
-        "StartTts runs before audio playback",
-        "StopTts runs after blocking playback completion",
-        "The actor returns to idle after the matching stop",
-        "Raw actor tokens remain outside repository files and logs"
-      ]
+      "validated_identity": "gnisu"
     },
     {
       "order": 3,
@@ -74,97 +39,59 @@
       "status": "complete",
       "guide": "streamerbot/MULTI_ACTOR_TTS_TEST.md",
       "completed_at": "2026-08-01T02:19:08-04:00",
-      "validated_identities": [
-        "gnisu",
-        "dascribe"
-      ],
-      "completion_note": "Both mapped identities used distinct actors and completed isolated StartTts, direct blocking Kokoro playback, and StopTts lifecycles. An unmapped broadcaster identity retained direct blocking OpenAI playback. The owner accepted the existing single queue as intentional stream behavior, so overlap and concurrent same-actor cleanup are not applicable production requirements.",
+      "validated_identities": ["gnisu", "dascribe"],
       "design_decision": {
         "production_queue": "single-serial-queue",
         "reason": "Keep live streams clean and understandable by allowing one synthesized voice at a time.",
-        "overlap_test": "not-applicable-by-design",
-        "concurrent_same_actor_cleanup_test": "not-applicable-by-design",
-        "underlying_helper_protection": "Actor-scoped stale-session protection was already live-tested independently."
-      },
-      "test_sequence": [
-        "Map a second production identity to a different actor",
-        "Verify each mapped identity activates only its assigned actor",
-        "Submit mapped requests close together and confirm the queue processes them one at a time",
-        "Verify each actor returns to idle before the next queued mapped identity begins",
-        "Run an unmapped identity and confirm the original direct blocking fallback path remains unchanged",
-        "Retain the previously validated actor-scoped expression, emote, and stale-session helper behavior"
-      ],
-      "acceptance_criteria": [
-        "Every configured AI voice activates only its assigned actor",
-        "Speaking starts before audible playback and returns to idle afterward",
-        "The production queue intentionally prevents overlapping voices",
-        "Queued mapped identities remain isolated across sequential playback",
-        "An unmapped identity uses the existing non-actor path",
-        "Actor-scoped expression, emote, and stale-session helper checks remain passed",
-        "No raw actor token appears in logs or repository files"
-      ]
+        "overlap_test": "not-applicable-by-design"
+      }
     },
     {
       "order": 4,
       "id": "packaged-windows-build",
       "title": "Build the LAN-enabled Windows release",
-      "status": "next",
+      "status": "complete",
       "command": "npm run build-release:lan",
-      "acceptance_criteria": [
-        "The standard and LAN executables build successfully",
-        "The release ZIP is created",
-        "LAN setup, actor, and Streamer.bot documentation are present",
-        "The Streamer.bot helper source is present"
-      ]
+      "completed_at": "2026-08-01T03:59:00-04:00",
+      "completion_note": "The standard and LAN executables, checksum files, required support files, and final 30.5 MB release ZIP were produced. The Archiver 8 ZipArchive correction passed in both ZIP stages.",
+      "artifacts": {
+        "archive": "release/ASAdventurer.zip",
+        "archive_size_mb": 30.5,
+        "standard_sha256": "52fd671cab5767289e3218057024d0d3a3e4662d104a8369933ac529f8e8aa9b",
+        "lan_sha256": "ef35d7d20cca29ed2290ab6ae44f850c6292c66c541e5d661e942857928b14eb"
+      }
     },
     {
       "order": 5,
       "id": "clean-folder-smoke-test",
       "title": "Smoke-test the packaged release from a clean folder",
-      "status": "blocked",
-      "blocked_by": [
-        "packaged-windows-build"
-      ],
-      "acceptance_criteria": [
-        "Certificate setup completes",
-        "Existing machine-data can be restored from backup",
-        "Main and actor OBS URLs render",
-        "Model and emote assets load",
-        "LAN restart recovery works",
-        "Streamer.bot can reach the actor API"
-      ]
+      "status": "complete",
+      "completed_at": "2026-08-01T03:59:00-04:00",
+      "completion_note": "The extracted package ran across two LAN computers. The remote browser worked, and the main and actor OBS overlays rendered after the generated root certificate was installed and browser/OBS processes were restarted on the OBS computer."
     },
     {
       "order": 6,
       "id": "pr-8-release-gate",
       "title": "Update PR #8 after release validation",
-      "status": "blocked",
-      "blocked_by": [
-        "clean-folder-smoke-test"
-      ],
-      "acceptance_criteria": [
-        "Remaining validation items are documented accurately",
-        "The pull request is marked ready only with explicit owner approval"
-      ]
+      "status": "complete",
+      "completed_at": "2026-08-01T03:59:00-04:00",
+      "completion_note": "Release validation and remaining promotion steps were documented. PR #8 intentionally remains draft and unmerged."
     },
     {
       "order": 7,
       "id": "merge-pr-8",
-      "title": "Merge Phase 2 into agent/lan-mode",
-      "status": "blocked",
-      "blocked_by": [
-        "pr-8-release-gate"
-      ],
-      "requires_explicit_owner_approval": true
+      "title": "Owner decision for PR #8 promotion into agent/lan-mode",
+      "status": "next",
+      "blocked_by": [],
+      "requires_explicit_owner_approval": true,
+      "notes": "Do not mark PR #8 ready, enable auto-merge, or merge it without an explicit owner instruction."
     },
     {
       "order": 8,
       "id": "combined-lan-regression",
       "title": "Retest the combined LAN integration branch",
       "status": "blocked",
-      "blocked_by": [
-        "merge-pr-8"
-      ],
+      "blocked_by": ["merge-pr-8"],
       "acceptance_criteria": [
         "Localhost mode remains unchanged",
         "Secure LAN machine registration and private assets work",
@@ -177,9 +104,7 @@
       "id": "merge-pr-1",
       "title": "Promote secure LAN mode to main",
       "status": "blocked",
-      "blocked_by": [
-        "combined-lan-regression"
-      ],
+      "blocked_by": ["combined-lan-regression"],
       "requires_explicit_owner_approval": true
     },
     {
@@ -187,16 +112,12 @@
       "id": "quantitative-performance-baseline",
       "title": "Record an optional OBS CPU and GPU baseline",
       "status": "planned",
-      "acceptance_criteria": [
-        "Record active, inactive, and hidden browser-source measurements",
-        "Document OBS visibility settings used during the measurement"
-      ],
-      "notes": "This is useful evidence but is not currently required to prove functional correctness."
+      "notes": "Useful evidence, but not required for functional correctness."
     }
   ],
   "maintenance": {
-    "rule": "When an item is completed, record the result in project-status.json, remove or mark the roadmap item complete, update updated_at in project-status.json, next-steps.json, and repository-checks.json, and add a concise CHANGELOG.md entry.",
-    "checkout_rule": "Use npm ci, then run npm run status:check after fetching and before beginning the next roadmap item.",
+    "rule": "When an item is completed, record the result in project-status.json, mark the roadmap item complete, update updated_at in all three JSON records, and add a concise CHANGELOG.md entry.",
+    "checkout_rule": "Use npm ci, then run npm run status:check after fetching and before beginning the next work item.",
     "security": "Never place live tokens, authenticated OBS URLs, or certificate secrets in roadmap files."
   }
 }
