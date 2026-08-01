@@ -5,66 +5,51 @@
   "updated_at": "2026-08-01",
   "active_checkout": {
     "remote": "origin",
-    "branch": "main",
+    "branch": "agent/ai-self-actor-controls",
     "base_branch": "main",
-    "pull_request": 1,
-    "expected_head_ref": "origin/main",
+    "pull_request": 9,
+    "expected_head_ref": "origin/agent/ai-self-actor-controls",
     "expected_base_ref": "origin/main",
-    "expected_head_rule": "After fetch and fast-forward update, local HEAD must equal origin/main.",
+    "expected_head_rule": "After fetch and fast-forward update, local HEAD must equal origin/agent/ai-self-actor-controls.",
     "expected_base_rule": "origin/main must be an ancestor of local HEAD."
   },
   "github_snapshot": {
-    "observed_at": "2026-08-01T05:17:00-04:00",
-    "pull_request": 1,
-    "pull_request_state": "closed",
-    "merged": true,
-    "draft": false,
-    "mergeable": false,
-    "source_head_sha": "60b8c1b4f6f6b5de4f5ab4808a58b31e446e8b12",
-    "merge_commit_sha": "a7c17ed75aafe34dff62d88345a75278665fd564",
+    "observed_at": "2026-08-01T06:25:29-04:00",
+    "pull_request": 9,
+    "pull_request_state": "open",
+    "merged": false,
+    "draft": true,
+    "mergeable": "pending-github-calculation",
+    "source_head_sha": "73552b12371d68bba2c27ebff07e28817beeae0e",
     "reported_commit_status_contexts": 0,
     "reported_commit_status": "none-reported",
-    "note": "PR #1 is merged into main. No CI pass is being claimed."
+    "note": "PR #9 is a draft implementation pull request. No CI pass is claimed."
   },
-  "release_validation": {
-    "windows_package_build": "passed-by-owner-output",
-    "required_package_files": "passed-by-owner-output",
-    "clean_folder_remote_obs_smoke_test": "passed-by-owner-confirmation",
-    "phase_2_pr_8_merge": "merged-at-670e108f695ca76ec53b032a6bff51b562ef20d3",
-    "combined_lan_regression": "passed-by-owner-confirmation",
-    "mainline_pr_1_merge": "merged-at-a7c17ed75aafe34dff62d88345a75278665fd564",
-    "default_demo_model": "not-bundled",
-    "remote_certificate_requirement": "Install the generated root certificate on each remote Windows browser or OBS computer and restart browser processes."
-  },
-  "last_promotion": {
-    "promoted_at": "2026-08-01T05:09:59-04:00",
-    "pull_request": 1,
-    "source_branch": "agent/lan-mode",
-    "target_branch": "main",
-    "source_head_sha": "60b8c1b4f6f6b5de4f5ab4808a58b31e446e8b12",
-    "merge_commit_sha": "a7c17ed75aafe34dff62d88345a75278665fd564",
-    "result": "merged-by-explicit-owner-approval"
-  },
-  "last_validation": {
-    "validated_at": "2026-08-01T04:59:00-04:00",
-    "working_branch": "agent/lan-mode",
-    "pull_request": 1,
-    "result": "combined-lan-regression-passed-by-owner-confirmation"
+  "feature_validation": {
+    "actor_capabilities_module_syntax": "passed",
+    "lan_bootstrap_syntax": "passed",
+    "capability_authentication_harness": "passed",
+    "capability_catalog_harness": "passed",
+    "capability_secret_leak_harness": "passed",
+    "streamerbot_helper_compile": "pending",
+    "universalbot_live_test": "pending",
+    "tts_queue_integration": "pending",
+    "remote_obs_and_package_regression": "pending"
   },
   "local_checks": [
     {
       "id": "working-branch",
       "command": "git branch --show-current",
-      "expected": "main"
+      "expected": "agent/ai-self-actor-controls"
     },
     {
       "id": "expected-head",
-      "command": "git rev-parse HEAD && git rev-parse origin/main",
+      "command": "git rev-parse HEAD && git rev-parse origin/agent/ai-self-actor-controls",
       "expected": "Both commands print the same SHA."
     },
     {
       "id": "ahead-behind",
-      "command": "git rev-list --left-right --count HEAD...origin/main",
+      "command": "git rev-list --left-right --count HEAD...origin/agent/ai-self-actor-controls",
       "expected": "0 0"
     },
     {
@@ -88,22 +73,21 @@
       "git clone https://github.com/XorishiTtv/angelssword-adventurers-overlay.git",
       "cd angelssword-adventurers-overlay",
       "git fetch --prune origin",
-      "git switch main",
-      "git pull --ff-only origin main",
+      "git switch --track -c agent/ai-self-actor-controls origin/agent/ai-self-actor-controls",
       "npm ci",
       "npm run status:check"
     ],
     "update_existing_checkout": [
       "git status --short",
       "git fetch --prune origin",
-      "git switch main",
-      "git pull --ff-only origin main",
+      "git switch agent/ai-self-actor-controls",
+      "git pull --ff-only origin agent/ai-self-actor-controls",
       "npm ci",
       "npm run status:check"
     ],
     "github_pr_status": [
-      "gh pr view 1 --repo XorishiTtv/angelssword-adventurers-overlay --json number,state,isDraft,mergedAt,baseRefName,headRefName,headRefOid,mergeCommit,url",
-      "gh pr checks 1 --repo XorishiTtv/angelssword-adventurers-overlay"
+      "gh pr view 9 --repo XorishiTtv/angelssword-adventurers-overlay --json number,state,isDraft,mergeable,baseRefName,baseRefOid,headRefName,headRefOid,url",
+      "gh pr checks 9 --repo XorishiTtv/angelssword-adventurers-overlay"
     ]
   },
   "dependency_install_policy": {
@@ -112,13 +96,14 @@
     "audit_rule": "Do not run npm audit fix automatically during checkout verification."
   },
   "sha_policy": {
-    "source_of_truth": "The fetched remote tracking ref origin/main.",
-    "rule": "A SHA written inside the repository becomes historical when a later status commit advances main.",
-    "handoff_rule": "Every handoff must report the exact current origin/main SHA after all commits are complete."
+    "source_of_truth": "The fetched remote tracking ref origin/agent/ai-self-actor-controls.",
+    "rule": "A SHA written inside the repository becomes historical when a later status commit advances the branch.",
+    "handoff_rule": "Every handoff must report the exact current remote head SHA after all commits are complete."
   },
   "safety": {
     "update_mode": "Use git pull --ff-only so an update cannot silently create a merge commit.",
     "dirty_checkout": "Commit, stash, or intentionally discard local changes before updating.",
-    "release_administration": "Creating tags, publishing releases, uploading artifacts, or deleting branches requires explicit owner approval."
+    "credentials": "Do not log or store actor tokens, machine tokens, authenticated OBS addresses, or certificate secrets.",
+    "pr_promotion": "PR #9 must remain draft and unmerged until validation completes and the owner gives separate explicit instructions for readiness and merge."
   }
 }
