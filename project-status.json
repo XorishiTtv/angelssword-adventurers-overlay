@@ -4,13 +4,13 @@
   "repository": "XorishiTtv/angelssword-adventurers-overlay",
   "updated_at": "2026-08-01",
   "active_work": {
-    "phase": "Combined secure LAN integration",
-    "branch": "agent/lan-mode",
+    "phase": "Mainline release administration",
+    "branch": "main",
     "base_branch": "main",
     "pull_request": 1,
-    "pull_request_state": "draft",
-    "release_state": "combined-integration-regression-complete-owner-promotion-pending",
-    "current_task": "owner-approval-pr-1-promotion"
+    "pull_request_state": "merged",
+    "release_state": "integration-merged-to-main",
+    "current_task": "release-administration-decision"
   },
   "repository_handoff": {
     "policy_file": "repository-checks.json",
@@ -18,202 +18,86 @@
     "dependency_install_command": "npm ci",
     "local_check_command": "npm run status:check",
     "fetch_and_check_command": "npm run status:check -- --fetch",
-    "expected_head_ref": "origin/agent/lan-mode",
+    "expected_head_ref": "origin/main",
     "expected_base_ref": "origin/main",
     "github_status_snapshot": {
-      "observed_at": "2026-08-01T04:59:00-04:00",
+      "observed_at": "2026-08-01T05:17:00-04:00",
       "pull_request": 1,
-      "pull_request_state": "open",
-      "draft": true,
-      "mergeable": true,
+      "pull_request_state": "closed",
+      "merged": true,
+      "draft": false,
+      "mergeable": false,
+      "source_head_sha": "60b8c1b4f6f6b5de4f5ab4808a58b31e446e8b12",
+      "merge_commit_sha": "a7c17ed75aafe34dff62d88345a75278665fd564",
       "reported_commit_status_contexts": 0,
       "status": "none-reported"
     }
   },
   "completed": [
     {
-      "id": "secure-lan-mode",
-      "title": "Secure LAN mode",
-      "status": "complete-on-integration-branch"
-    },
-    {
-      "id": "ai-actor-management",
-      "title": "AI Actor management",
-      "status": "complete-and-live-tested"
-    },
-    {
-      "id": "actor-emotes",
-      "title": "Actor emotes",
-      "status": "complete-and-live-tested"
-    },
-    {
-      "id": "streamerbot-helper",
-      "title": "Reusable Streamer.bot helper",
-      "status": "complete-and-live-tested"
-    },
-    {
-      "id": "overlay-performance-recovery",
-      "title": "Overlay performance and recovery",
-      "status": "complete-and-observationally-tested"
-    },
-    {
-      "id": "repository-status-workflow",
-      "title": "Repository checkout and handoff checks",
-      "status": "complete-user-confirmed"
-    },
-    {
-      "id": "production-tts-first-identity",
-      "title": "First production TTS actor integration",
-      "status": "complete-and-live-tested",
+      "id": "secure-lan-and-ai-actors",
+      "title": "Secure LAN and AI Actor integration",
+      "status": "complete-live-tested-and-merged-to-main",
       "details": [
-        "Mapped the production identity gnisu to one actor",
-        "StartTts completed before direct blocking Kokoro playback",
-        "StopTts completed after playback and returned the actor to idle"
+        "PR #8 merged Phase 2 AI Actors into agent/lan-mode at 670e108f695ca76ec53b032a6bff51b562ef20d3",
+        "PR #1 merged the combined integration into main at a7c17ed75aafe34dff62d88345a75278665fd564"
       ]
     },
     {
-      "id": "multi-actor-production-tts",
-      "title": "Serial multi-actor production TTS isolation",
+      "id": "production-tts",
+      "title": "Serial multi-actor production TTS",
       "status": "complete-and-live-tested",
       "details": [
-        "Mapped gnisu and dascribe to different actors and exercised both production routes",
-        "An unmapped broadcaster identity remained on direct blocking OpenAI playback",
-        "The single production queue intentionally serializes voices to keep streams clean and understandable",
-        "Overlap is not applicable under the accepted serial-queue design"
+        "gnisu and dascribe use separate actors",
+        "Unmapped identities retain the original fallback",
+        "One synthesized voice plays at a time by design"
       ]
     },
     {
-      "id": "packaged-windows-release",
+      "id": "windows-package",
       "title": "LAN-enabled Windows release package",
       "status": "complete-and-owner-verified",
       "details": [
-        "ASAdventurer.exe and ASAdventurerLAN.exe built successfully with pkg 5.8.1 and GZip compression",
-        "Both ZIP paths use the Archiver 8 ZipArchive constructor API",
-        "The final release/ASAdventurer.zip archive was created at 30.5 MB",
-        "ASAdventurer.exe SHA256: 52fd671cab5767289e3218057024d0d3a3e4662d104a8369933ac529f8e8aa9b",
-        "ASAdventurerLAN.exe SHA256: ef35d7d20cca29ed2290ab6ae44f850c6292c66c541e5d661e942857928b14eb",
-        "Required launchers, checksum files, certificate setup, documentation, and Streamer.bot helper source were present"
+        "Both Windows executables and the final 30.5 MB release archive were produced",
+        "Required launchers, checksums, certificate setup, documentation, and helper source were present"
       ]
     },
     {
-      "id": "clean-folder-smoke-test",
-      "title": "Clean-folder packaged release smoke test",
+      "id": "clean-folder-and-regression",
+      "title": "Clean-folder and combined LAN regression",
       "status": "complete-by-owner-confirmation",
       "details": [
-        "The release ZIP was extracted and exercised outside the repository working tree",
-        "The LAN server ran on one computer while the browser and OBS ran on another LAN computer",
-        "The remote browser loaded the main and actor overlays",
-        "The initial transparent OBS result was traced to an untrusted generated LAN root certificate on the OBS computer",
-        "Installing the generated root certificate and restarting browser and OBS processes restored trusted HTTPS rendering",
-        "The owner confirmed the main and actor overlays were working"
-      ]
-    },
-    {
-      "id": "phase-2-pr-8-merge",
-      "title": "Merge Phase 2 AI Actors into the secure LAN integration branch",
-      "status": "complete-by-owner-approval",
-      "details": [
-        "PR #8 was marked ready only after explicit owner approval",
-        "PR #8 merged into agent/lan-mode at merge commit 670e108f695ca76ec53b032a6bff51b562ef20d3",
-        "PR #1 now contains the combined secure LAN and AI Actor work"
-      ]
-    },
-    {
-      "id": "combined-lan-regression",
-      "title": "Combined secure LAN integration regression",
-      "status": "complete-by-owner-confirmation",
-      "details": [
-        "The default launcher remained localhost-only and the ordinary control panel and overlay worked",
-        "Secure LAN certificate setup and trusted remote HTTPS access worked",
-        "Machine registration, global models, private uploads, model selection, and emotes worked",
-        "AI Actor creation, actor overlays, expressions, speaking state, reset, emotes, and nested sub-animations worked",
-        "Streamer.bot reached the actor API and mapped serial TTS returned each actor to idle",
-        "Main and actor OBS sources rendered remotely and recovered after the LAN process restarted",
-        "The owner reported the combined integration was in working order"
+        "Localhost mode, secure LAN registration and assets, AI Actors, Streamer.bot, remote OBS rendering, and restart recovery worked",
+        "Remote OBS required the generated LAN root certificate to be trusted on the OBS computer"
       ]
     }
   ],
   "validation": [
-    {
-      "id": "main-and-actor-overlays",
-      "status": "passed",
-      "details": "Main and actor overlays rendered in browser and OBS on same-computer localhost and remote secure-LAN setups."
-    },
-    {
-      "id": "actor-emote-playback",
-      "status": "passed"
-    },
-    {
-      "id": "streamerbot-methods",
-      "status": "passed"
-    },
-    {
-      "id": "reconnect-and-recovery",
-      "status": "passed-observationally"
-    },
-    {
-      "id": "multi-actor-production-isolation",
-      "status": "passed-serial-queue"
-    },
-    {
-      "id": "packaged-windows-release",
-      "status": "passed",
-      "details": "Both executables, checksum files, final 30.5 MB ZIP, launchers, certificate setup, documentation, and helper source were produced and verified."
-    },
-    {
-      "id": "clean-folder-smoke-test",
-      "status": "passed-by-owner-confirmation",
-      "details": "The extracted package served remote browser and OBS clients across the LAN. Main and actor OBS overlays rendered after the generated root certificate was trusted on the OBS computer."
-    },
-    {
-      "id": "phase-2-pr-8-merge",
-      "status": "passed",
-      "details": "PR #8 merged into agent/lan-mode using the verified source head 03ba6e4a1b0b779bc801597704832c499336558b."
-    },
-    {
-      "id": "combined-lan-regression",
-      "status": "passed-by-owner-confirmation",
-      "details": "The owner confirmed localhost mode, secure LAN registration and assets, AI Actors, Streamer.bot serial TTS, remote OBS rendering, and LAN restart recovery were all in working order on agent/lan-mode."
-    }
+    {"id": "main-and-actor-overlays", "status": "passed"},
+    {"id": "actor-emotes", "status": "passed"},
+    {"id": "streamerbot-methods", "status": "passed"},
+    {"id": "reconnect-and-recovery", "status": "passed-observationally"},
+    {"id": "multi-actor-production-isolation", "status": "passed-serial-queue"},
+    {"id": "packaged-windows-release", "status": "passed"},
+    {"id": "combined-lan-regression", "status": "passed-by-owner-confirmation"},
+    {"id": "mainline-promotion", "status": "passed"}
   ],
   "known_limits": [
-    {
-      "id": "serial-production-tts",
-      "details": "Production TTS intentionally uses one serial queue."
-    },
-    {
-      "id": "process-restart-held-emote",
-      "details": "A full LAN process restart cannot restore a held emote that existed before the process stopped."
-    },
-    {
-      "id": "performance-benchmark",
-      "details": "No quantitative CPU or GPU benchmark has been recorded."
-    },
-    {
-      "id": "github-status-contexts",
-      "details": "GitHub reports no commit status contexts for PR #1; no CI pass is claimed."
-    },
-    {
-      "id": "default-demo-model",
-      "details": "The optional Queri demo model was not bundled because it was absent from public/assets."
-    },
-    {
-      "id": "remote-certificate-trust",
-      "details": "Each remote Windows browser or OBS computer must trust the generated LAN root certificate and restart browser processes."
-    },
-    {
-      "id": "promotion-state",
-      "details": "Combined regression is complete. PR #1 remains draft and unmerged; marking it ready or merging it requires separate explicit owner approval."
-    }
+    {"id": "serial-production-tts", "details": "Production TTS intentionally uses one serial queue."},
+    {"id": "process-restart-held-emote", "details": "A full process restart cannot restore an emote that was held before shutdown."},
+    {"id": "performance-benchmark", "details": "No quantitative CPU or GPU benchmark has been recorded."},
+    {"id": "github-status-contexts", "details": "No commit status contexts were reported for the PR #1 merge commit; no CI pass is claimed."},
+    {"id": "default-demo-model", "details": "The optional Queri demo model was not bundled because it was absent from public/assets."},
+    {"id": "remote-certificate-trust", "details": "Each remote Windows browser or OBS computer must trust the generated LAN root certificate and restart browser processes."}
   ],
   "security": {
     "do_not_store": [
-      "machine tokens",
-      "actor tokens",
-      "complete authenticated OBS URLs",
+      "machine credentials",
+      "actor credentials",
+      "complete authenticated OBS addresses",
       "certificate private keys",
       "certificate passwords"
     ],
-    "note": "Status and documentation files must contain examples only and must never contain live credentials."
+    "note": "Repository records must not contain live credentials or private certificate material."
   }
 }
