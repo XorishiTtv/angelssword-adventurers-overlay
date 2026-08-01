@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "project": "AS Adventurer",
-  "updated_at": "2026-07-29",
+  "updated_at": "2026-08-01",
   "source_status_file": "project-status.json",
   "status_values": [
     "next",
@@ -44,10 +44,13 @@
       "order": 2,
       "id": "production-tts-integration",
       "title": "Connect actor helper calls to the production TTS workflow",
-      "status": "next",
+      "status": "complete",
       "requires_repository_code_change": false,
-      "guide": "STREAMERBOT_AI_ACTORS.md",
+      "guide": "streamerbot/PRODUCTION_TTS_INTEGRATION.md",
       "mapping_worksheet": "streamerbot/actor-tts-mapping.example.json",
+      "completed_at": "2026-08-01T01:29:17-04:00",
+      "validated_identity": "gnisu",
+      "completion_note": "The gnisu production request completed StartTts, direct blocking Kokoro playback, and StopTts. The actor returned to idle, duplicate File Watcher playback was absent from the successful path, and the repository helper replaced the stale capability-discovery helper instance.",
       "integration_sequence": [
         "Inventory the production TTS action and every completion or error path",
         "Map one TTS identity to one actor ID and persisted token-global name",
@@ -57,27 +60,36 @@
         "Repeat for remaining actor identities after the first mapping passes"
       ],
       "acceptance_criteria": [
-        "Each supported TTS identity resolves to the intended actor ID and token variable",
+        "The first supported TTS identity resolves to the intended actor ID and token variable",
         "StartTts runs before audio playback",
-        "StopTts runs after playback completion or cleanup",
-        "A delayed stop from an older playback cannot stop a newer session",
-        "Non-actor TTS users continue using the existing overlay behavior"
-      ],
-      "notes": "Keep raw actor tokens in Streamer.bot persisted globals, not in repository files. The mapping worksheet records only global variable names and is not loaded automatically by the helper."
+        "StopTts runs after blocking playback completion",
+        "The actor returns to idle after the matching stop",
+        "Raw actor tokens remain outside repository files and logs"
+      ]
     },
     {
       "order": 3,
       "id": "end-to-end-multi-actor-tts-test",
-      "title": "Run an end-to-end multi-actor TTS test",
-      "status": "blocked",
-      "blocked_by": [
-        "production-tts-integration"
+      "title": "Run an end-to-end multi-actor TTS isolation test",
+      "status": "next",
+      "guide": "streamerbot/MULTI_ACTOR_TTS_TEST.md",
+      "blocked_by": [],
+      "test_sequence": [
+        "Map a second production identity to a different actor",
+        "Verify each mapped identity activates only its assigned actor",
+        "Overlap both mapped identities and confirm one completion does not stop the other actor",
+        "Run back-to-back requests for one actor and confirm stale-session protection",
+        "Exercise actor-scoped expression and emote behavior",
+        "Run an unmapped identity and confirm the original fallback path remains unchanged"
       ],
       "acceptance_criteria": [
         "Every configured AI voice activates only its assigned actor",
         "Speaking starts before audible playback and returns to idle afterward",
+        "Overlapping actors remain independent",
         "Expressions and emotes remain actor-scoped",
-        "Back-to-back requests preserve stale-session protection"
+        "Back-to-back requests preserve stale-session protection",
+        "An unmapped identity uses the existing non-actor path",
+        "No raw actor token appears in logs or repository files"
       ]
     },
     {
