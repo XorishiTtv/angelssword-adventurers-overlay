@@ -11,7 +11,7 @@ const { execFileSync, execSync } = require('child_process');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const archiver = require('archiver');
+const { ZipArchive } = require('archiver');
 
 const ROOT = __dirname;
 const RELEASE_DIR = path.join(ROOT, 'release');
@@ -117,7 +117,7 @@ function createZip() {
     if (fs.existsSync(ZIP_PATH)) fs.unlinkSync(ZIP_PATH);
 
     const output = fs.createWriteStream(ZIP_PATH);
-    const archive = archiver('zip', { zlib: { level: 9 } });
+    const archive = new ZipArchive({ zlib: { level: 9 } });
 
     output.on('close', resolve);
     output.on('error', reject);
