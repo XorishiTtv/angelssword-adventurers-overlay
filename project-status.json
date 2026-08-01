@@ -9,8 +9,8 @@
     "base_branch": "agent/lan-mode",
     "pull_request": 8,
     "pull_request_state": "draft",
-    "release_state": "implementation-complete-release-validation-pending",
-    "current_task": "packaged-windows-build"
+    "release_state": "release-validation-complete-owner-promotion-pending",
+    "current_task": "owner-approval-pr-8-promotion"
   },
   "repository_handoff": {
     "policy_file": "repository-checks.json",
@@ -20,9 +20,8 @@
     "fetch_and_check_command": "npm run status:check -- --fetch",
     "expected_head_ref": "origin/agent/ai-actors-control-panel",
     "expected_base_ref": "origin/agent/lan-mode",
-    "expected_head_rule": "After fetching and updating, local HEAD must equal the expected head ref.",
     "github_status_snapshot": {
-      "observed_at": "2026-08-01T02:30:00-04:00",
+      "observed_at": "2026-08-01T03:59:00-04:00",
       "pull_request_state": "open",
       "draft": true,
       "mergeable": true,
@@ -34,98 +33,32 @@
     {
       "id": "secure-lan-mode",
       "title": "Secure LAN mode",
-      "status": "complete-on-integration-branch",
-      "details": [
-        "HTTPS and secure WebSocket launcher for trusted private networks",
-        "Machine registration and token-authenticated machine ownership",
-        "Shared read-only global models and isolated private machine assets",
-        "Authenticated OBS URLs and Windows certificate setup",
-        "LAN-enabled release builder"
-      ]
+      "status": "complete-on-integration-branch"
     },
     {
       "id": "ai-actor-management",
       "title": "AI Actor management",
-      "status": "complete",
-      "details": [
-        "Create, list, rename, reconfigure, reset, and delete actors",
-        "One-time actor token and OBS URL issuance",
-        "Actor-scoped expression, speaking, model, and connection state",
-        "Machine-owner controls that do not expose actor tokens"
-      ]
+      "status": "complete-and-live-tested"
     },
     {
       "id": "actor-emotes",
       "title": "Actor emotes",
-      "status": "complete",
-      "details": [
-        "Type 1 one-shot and Type 2 held emotes",
-        "Intro, idle, speaking, outro, sound, and variant support",
-        "Slash-separated nested sub-animation support",
-        "Actor-scoped short-lived signed media URLs for owner controls",
-        "Actor-token trigger, release, catalog, and sub-emote endpoints"
-      ]
+      "status": "complete-and-live-tested"
     },
     {
       "id": "streamerbot-helper",
       "title": "Reusable Streamer.bot helper",
-      "status": "complete-and-live-tested",
-      "details": [
-        "StartTts, StopTts, SetExpression, ResetActor, TriggerEmote, ReleaseEmote, and TriggerSubEmote",
-        "Generated or supplied speech session IDs",
-        "Cross-action non-persisted session storage",
-        "Stale-session protection",
-        "Private-LAN and TLS destination validation",
-        "No actor-token logging or helper-created token globals"
-      ]
+      "status": "complete-and-live-tested"
     },
     {
       "id": "overlay-performance-recovery",
       "title": "Overlay performance and recovery",
-      "status": "complete-and-observationally-tested",
-      "details": [
-        "Bounded retry for transient asset requests",
-        "Inactive and hidden video pausing",
-        "Removed media detachment for earlier resource release",
-        "Bounded empty-overlay self-recovery",
-        "Actor model replay on reconnect",
-        "Held Type 2 emote restoration after transient socket interruption"
-      ]
-    },
-    {
-      "id": "signed-media-playback-fix",
-      "title": "Signed actor media playback compatibility",
-      "status": "complete-and-live-tested",
-      "details": [
-        "Actor WebSocket media URLs retain an extension hint for renderer type detection",
-        "Signed query parameters and authentication remain unchanged"
-      ]
+      "status": "complete-and-observationally-tested"
     },
     {
       "id": "repository-status-workflow",
       "title": "Repository checkout and handoff checks",
-      "status": "complete-user-confirmed",
-      "details": [
-        "Machine-readable repository-checks.json policy",
-        "Fresh checkout and fast-forward update guide",
-        "Local branch, head, base, ahead/behind, cleanliness, and JSON consistency checker",
-        "Standard handoff fields for expected head and GitHub check status",
-        "Node syntax validation passed for the checker",
-        "The first Windows checkout run identified an incidental package-lock.json modification",
-        "The dependency-install procedure was corrected from npm install to npm ci",
-        "The owner reported the expected branch, base, PR, and head values for 23a36f3c5842c7bbc7d983dad073011ba9e85118 and authorized progression"
-      ]
-    },
-    {
-      "id": "production-tts-mapping-worksheet",
-      "title": "Production TTS actor mapping worksheet",
-      "status": "complete",
-      "details": [
-        "Added streamerbot/actor-tts-mapping.example.json",
-        "Records actor IDs and persisted token-global names without raw token values",
-        "Explicitly documentation-only and not automatically read by the helper",
-        "Preserves the existing non-actor TTS fallback for unmapped identities"
-      ]
+      "status": "complete-user-confirmed"
     },
     {
       "id": "production-tts-first-identity",
@@ -134,11 +67,7 @@
       "details": [
         "Mapped the production identity gnisu to one actor",
         "StartTts completed before direct blocking Kokoro playback",
-        "StopTts completed after playback and returned the actor to idle",
-        "The successful path used the repository helper that posts directly to the actor state endpoint",
-        "Duplicate File Watcher playback was removed from the successful Kokoro path",
-        "The stale capability-discovery helper instance was replaced",
-        "Raw actor tokens remained outside repository files and logs"
+        "StopTts completed after playback and returned the actor to idle"
       ]
     },
     {
@@ -146,14 +75,36 @@
       "title": "Serial multi-actor production TTS isolation",
       "status": "complete-and-live-tested",
       "details": [
-        "Mapped gnisu and dascribe to different actor IDs and exercised both production routes",
-        "Each mapped identity started only its assigned actor before blocking Kokoro playback",
-        "Each matching StopTts completed after playback and returned the assigned actor to idle",
-        "A broadcaster identity with no actor mapping remained on the original direct blocking OpenAI playback path",
-        "The single production queue intentionally serializes voices so streams remain clean and understandable",
-        "Overlapping production speech and concurrent same-actor cleanup are not applicable under the accepted serial-queue design",
-        "The helper's actor-scoped expression, emote, and stale-session protections were validated separately in prior live tests",
-        "No raw actor token appeared in repository files or reviewed logs"
+        "Mapped gnisu and dascribe to different actors and exercised both production routes",
+        "An unmapped broadcaster identity remained on direct blocking OpenAI playback",
+        "The single production queue intentionally serializes voices to keep streams clean and understandable",
+        "Overlap is not applicable under the accepted serial-queue design"
+      ]
+    },
+    {
+      "id": "packaged-windows-release",
+      "title": "LAN-enabled Windows release package",
+      "status": "complete-and-owner-verified",
+      "details": [
+        "ASAdventurer.exe and ASAdventurerLAN.exe built successfully with pkg 5.8.1 and GZip compression",
+        "Both ZIP paths use the Archiver 8 ZipArchive constructor API",
+        "The final release/ASAdventurer.zip archive was created at 30.5 MB",
+        "ASAdventurer.exe SHA256: 52fd671cab5767289e3218057024d0d3a3e4662d104a8369933ac529f8e8aa9b",
+        "ASAdventurerLAN.exe SHA256: ef35d7d20cca29ed2290ab6ae44f850c6292c66c541e5d661e942857928b14eb",
+        "Required launchers, checksum files, certificate setup, documentation, and Streamer.bot helper source were present"
+      ]
+    },
+    {
+      "id": "clean-folder-smoke-test",
+      "title": "Clean-folder packaged release smoke test",
+      "status": "complete-by-owner-confirmation",
+      "details": [
+        "The release ZIP was extracted and exercised outside the repository working tree",
+        "The LAN server ran on one computer while the browser and OBS ran on another LAN computer",
+        "The remote browser loaded the main and actor overlays",
+        "The initial transparent OBS result was traced to an untrusted generated LAN root certificate on the OBS computer",
+        "Installing the generated root certificate and restarting browser and OBS processes restored trusted HTTPS rendering",
+        "The owner confirmed the main and actor overlays were working"
       ]
     }
   ],
@@ -161,73 +112,63 @@
     {
       "id": "main-and-actor-overlays",
       "status": "passed",
-      "details": "Main and actor overlays rendered in a browser and OBS using https://localhost:3000."
+      "details": "Main and actor overlays rendered in browser and OBS on same-computer localhost and remote secure-LAN setups."
     },
     {
       "id": "actor-emote-playback",
-      "status": "passed",
-      "details": "Type 2 trigger, nested sub-animation, and release were exercised successfully."
-    },
-    {
-      "id": "streamerbot-compilation",
-      "status": "passed",
-      "details": "The helper compiled in Streamer.bot and all seven named methods were discoverable."
+      "status": "passed"
     },
     {
       "id": "streamerbot-methods",
-      "status": "passed",
-      "details": "Expression, start, stop, reset, emote, sub-emote, release, cross-action session lookup, and stale-session protection were exercised successfully."
+      "status": "passed"
     },
     {
       "id": "reconnect-and-recovery",
-      "status": "passed-observationally",
-      "details": "Overlay reconnection and recovery behavior was exercised successfully in the live setup."
-    },
-    {
-      "id": "repository-status-checker",
-      "status": "passed-by-owner-confirmation",
-      "details": "The owner reported the expected branch, base, PR, and head values after the corrected checkout workflow and authorized progression to production TTS integration. The verified head was 23a36f3c5842c7bbc7d983dad073011ba9e85118; the current head must always be read from the fetched remote ref."
-    },
-    {
-      "id": "production-tts-gnisu",
-      "status": "passed",
-      "details": "The gnisu production request started its actor, completed direct blocking Kokoro playback, stopped the matching speech session, and returned the actor to idle."
+      "status": "passed-observationally"
     },
     {
       "id": "multi-actor-production-isolation",
-      "status": "passed-serial-queue",
-      "details": "The mapped identities gnisu and dascribe used distinct actors and completed isolated start, blocking playback, and stop lifecycles. An unmapped broadcaster identity retained direct blocking OpenAI playback. Overlap and concurrent production stale-cleanup tests are not applicable because the accepted single queue intentionally serializes all voices."
+      "status": "passed-serial-queue"
     },
     {
       "id": "packaged-windows-release",
-      "status": "next",
-      "details": "Build the full LAN-enabled Windows package, then run the clean-folder smoke test."
+      "status": "passed",
+      "details": "Both executables, checksum files, final 30.5 MB ZIP, launchers, certificate setup, documentation, and helper source were produced and verified."
+    },
+    {
+      "id": "clean-folder-smoke-test",
+      "status": "passed-by-owner-confirmation",
+      "details": "The extracted package served remote browser and OBS clients across the LAN. Main and actor OBS overlays rendered after the generated root certificate was trusted on the OBS computer."
     }
   ],
   "known_limits": [
     {
       "id": "serial-production-tts",
-      "details": "Production TTS intentionally uses one serial queue. Multiple voices do not overlap; later requests wait until the active playback and matching actor stop complete."
+      "details": "Production TTS intentionally uses one serial queue."
     },
     {
       "id": "process-restart-held-emote",
-      "details": "Held emote state is in memory. A full LAN process restart cannot restore a held emote that existed before the process stopped."
+      "details": "A full LAN process restart cannot restore a held emote that existed before the process stopped."
     },
     {
       "id": "performance-benchmark",
-      "details": "Hidden and inactive media behavior was observed working, but no quantitative CPU or GPU benchmark has been recorded."
+      "details": "No quantitative CPU or GPU benchmark has been recorded."
     },
     {
       "id": "github-status-contexts",
-      "details": "GitHub currently reports no commit status contexts for PR #8. This is not a passing CI suite; local and live validation remain required."
+      "details": "GitHub reports no commit status contexts for PR #8; no CI pass is claimed."
     },
     {
-      "id": "dependency-audit",
-      "details": "The first npm install reported one low and one high vulnerability. The dependency paths have not yet been reviewed, and npm audit fix must not be run automatically during checkout verification."
+      "id": "default-demo-model",
+      "details": "The optional Queri demo model was not bundled because it was absent from public/assets."
+    },
+    {
+      "id": "remote-certificate-trust",
+      "details": "Each remote Windows browser or OBS computer must trust the generated LAN root certificate and restart browser processes."
     },
     {
       "id": "merge-state",
-      "details": "Phase 2 remains on a draft pull request and is not merged into agent/lan-mode or main."
+      "details": "PR #8 remains draft and unmerged. Marking it ready or merging requires explicit owner approval."
     }
   ],
   "security": {
