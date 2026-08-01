@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "project": "AS Adventurer",
   "repository": "XorishiTtv/angelssword-adventurers-overlay",
-  "updated_at": "2026-07-29",
+  "updated_at": "2026-08-01",
   "active_work": {
     "phase": "Phase 2 - AI Actors",
     "branch": "agent/ai-actors-control-panel",
@@ -10,7 +10,7 @@
     "pull_request": 8,
     "pull_request_state": "draft",
     "release_state": "implementation-complete-release-validation-pending",
-    "current_task": "production-tts-integration"
+    "current_task": "end-to-end-multi-actor-tts-test"
   },
   "repository_handoff": {
     "policy_file": "repository-checks.json",
@@ -22,7 +22,7 @@
     "expected_base_ref": "origin/agent/lan-mode",
     "expected_head_rule": "After fetching and updating, local HEAD must equal the expected head ref.",
     "github_status_snapshot": {
-      "observed_at": "2026-07-29T09:53:00-04:00",
+      "observed_at": "2026-08-01T01:37:00-04:00",
       "pull_request_state": "open",
       "draft": true,
       "mergeable": true,
@@ -126,6 +126,20 @@
         "Explicitly documentation-only and not automatically read by the helper",
         "Preserves the existing non-actor TTS fallback for unmapped identities"
       ]
+    },
+    {
+      "id": "production-tts-first-identity",
+      "title": "First production TTS actor integration",
+      "status": "complete-and-live-tested",
+      "details": [
+        "Mapped the production identity gnisu to one actor",
+        "StartTts completed before direct blocking Kokoro playback",
+        "StopTts completed after playback and returned the actor to idle",
+        "The successful path used the repository helper that posts directly to the actor state endpoint",
+        "Duplicate File Watcher playback was removed from the successful Kokoro path",
+        "The stale capability-discovery helper instance was replaced",
+        "Raw actor tokens remained outside repository files and logs"
+      ]
     }
   ],
   "validation": [
@@ -158,6 +172,16 @@
       "id": "repository-status-checker",
       "status": "passed-by-owner-confirmation",
       "details": "The owner reported the expected branch, base, PR, and head values after the corrected checkout workflow and authorized progression to production TTS integration. The verified head was 23a36f3c5842c7bbc7d983dad073011ba9e85118; the current head must always be read from the fetched remote ref."
+    },
+    {
+      "id": "production-tts-gnisu",
+      "status": "passed",
+      "details": "The gnisu production request started its actor, completed direct blocking Kokoro playback, stopped the matching speech session, and returned the actor to idle."
+    },
+    {
+      "id": "multi-actor-production-isolation",
+      "status": "next",
+      "details": "A second mapped identity, overlapping actors, same-actor stale cleanup, actor-scoped expression/emote behavior, and an unmapped fallback remain to be exercised."
     },
     {
       "id": "packaged-windows-release",
