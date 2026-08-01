@@ -9,59 +9,57 @@ All notable user-visible changes to AS Adventurer are recorded here.
 - Opt-in secure LAN mode using HTTPS and secure WebSockets on trusted private networks.
 - Machine registration with token-authenticated ownership and isolated private model storage.
 - Shared read-only global models alongside machine-private uploads.
-- AI Actor creation, naming, model selection, default expression, reset, token regeneration, OBS URL generation, and deletion controls.
-- Actor-scoped expression and speaking state with speech-session IDs and stale-stop protection.
-- Actor Type 1 one-shot emotes and Type 2 held emotes with intro, idle, speaking, outro, sound, variants, and nested sub-animations.
-- Short-lived actor/model/path-scoped signed media URLs for machine-owner emote controls.
-- Reusable `streamerbot/ASAdventurerActorHelper.cs` with seven named methods and command-dispatch aliases.
-- Shared overlay runtime recovery for transient asset failures, empty overlays, and actor reconnects.
-- Inactive and hidden video pausing plus removed-media cleanup to reduce unnecessary browser work.
-- `project-status.json`, `next-steps.json`, and `PROJECT_STATUS.md` for machine-readable and human-readable progress tracking.
-- `repository-checks.json` and `LOCAL_CHECKOUT.md` for active branch, base, PR, expected-ref, checkout, update, and handoff rules.
-- `npm run status:check` for local branch, expected head, ahead/behind, base ancestry, clean-worktree, and project-record validation.
-- `streamerbot/PRODUCTION_TTS_INTEGRATION.md` with a one-actor-first production wiring and cleanup runbook.
-- `streamerbot/MULTI_ACTOR_TTS_TEST.md` with serial mapped-identity routing, queue isolation, actor-scope, and unmapped-fallback checks.
-- `streamerbot/actor-tts-mapping.example.json` as a documentation-only identity-to-actor worksheet containing no raw token values.
+- AI Actor creation, naming, model selection, reset, token regeneration, OBS URL generation, and deletion controls.
+- Actor-scoped expressions, speaking state, speech-session IDs, stale-stop protection, emotes, and nested sub-animations.
+- Reusable `streamerbot/ASAdventurerActorHelper.cs` with seven named methods.
+- Shared overlay recovery, inactive-media pausing, and removed-media cleanup.
+- Project status, roadmap, checkout, and repository handoff records.
+- Production TTS integration and serial multi-actor validation guides.
 
 ### Changed
 
-- Secure LAN control pages receive actor management controls without modifying ordinary localhost control pages.
-- Actor overlays replay their selected model after reconnecting.
-- Held Type 2 emotes can be restored after a transient socket interruption while the LAN process remains running.
-- Same-computer OBS and Streamer.bot setup uses the certificate-valid `https://localhost:3000` origin.
-- Documentation now separates general setup, LAN setup, AI Actor management, Streamer.bot use, production TTS integration, serial multi-actor testing, project status, roadmap, and local checkout information.
-- Production TTS keeps one serial queue by design so only one synthesized voice is audible at a time.
-- The multi-actor production gate is complete for `gnisu` and `dascribe`; the LAN-enabled Windows package build is now the immediate roadmap item.
-- Repository updates use `git pull --ff-only`, and work handoffs report the exact current remote head after all commits are complete.
-- Fresh and updated verification checkouts use `npm ci` instead of `npm install` so dependencies come from the committed lockfile without an incidental lockfile rewrite.
+- Production TTS uses one serial queue by design so only one synthesized voice is audible at a time.
+- `gnisu` and `dascribe` are validated production actor identities; unmapped broadcaster playback remains on the original OpenAI path.
+- Fresh and updated checkouts use `npm ci` and fast-forward-only pulls.
+- Release validation is complete; the next step is the explicit owner decision for PR #8 promotion.
+- PR #8 remains draft and unmerged until explicitly approved.
 
 ### Fixed
 
-- Actor emote media URLs with signed query parameters now retain a renderer-compatible extension hint, allowing WebM and other media to be detected correctly.
-- Removed the global Express response monkey patch from actor control-panel injection and limited response transformation to the intended control-page routes.
-- Added bounded startup and reconnection recovery so an overlay is less likely to remain blank after a temporary server interruption.
-- Added documented recovery for a `package-lock.json` change caused by running `npm install` during clean-checkout verification.
-- Documented direct blocking playback ownership so generated TTS files are not played simultaneously by both File Watcher and the production action.
-- Documented how to identify and replace a stale Streamer.bot helper instance that performs unsupported capability-discovery requests.
+- Actor emote signed URLs retain a renderer-compatible media extension hint.
+- Overlay startup and reconnection recovery use bounded retry and reload behavior.
+- Duplicate TTS File Watcher playback and stale helper capability discovery were removed from the validated production paths.
+- Standard and LAN release builders now use the Archiver 8 `ZipArchive` constructor API.
+- Remote OBS transparency caused by an untrusted generated LAN certificate was resolved by installing the generated root certificate on the OBS computer and restarting browser processes.
 
 ### Validated
 
-- Main and actor overlays rendered in a browser and OBS through `https://localhost:3000`.
-- Actor expression, speaking, reset, Type 2 emote trigger, nested sub-animation, and release behavior passed live testing.
-- The Streamer.bot helper compiled successfully and exposed all seven named methods.
-- Streamer.bot expression, start, stop, reset, emote, sub-emote, release, cross-action session lookup, and stale-session protection passed live testing.
-- The production `gnisu` identity completed `StartTts`, direct blocking Kokoro playback, and `StopTts`; its actor returned to idle after playback.
-- The production `dascribe` identity completed the same lifecycle against a different actor.
-- Requests queued close together were processed sequentially, with the first actor returning to idle before the next actor started.
-- An unmapped broadcaster identity remained on the direct blocking OpenAI playback path without starting an actor.
-- The accepted serial-queue design makes overlapping production speech and concurrent same-actor cleanup not applicable release requirements.
-- The successful production cycles used the repository helper and did not use the stale capability-discovery path.
-- Overlay recovery behavior passed the project harnesses and live observational testing.
-- The repository status checker passed Node syntax validation, correctly detected an incidental `package-lock.json` change, and the owner authorized progression after reporting the expected branch, base, PR, and head values.
-- GitHub reported no commit status contexts for the observed PR #8 head, so no CI pass is being claimed.
+- Main and actor overlays rendered in browser and OBS through same-computer localhost and remote secure-LAN setups.
+- Actor expression, speaking, reset, Type 2 emote, nested sub-animation, and release behavior passed live testing.
+- The Streamer.bot helper compiled and all seven named methods passed live testing.
+- Production `gnisu` and `dascribe` requests completed isolated start, blocking playback, and stop lifecycles through the accepted serial queue.
+- An unmapped broadcaster identity retained direct blocking OpenAI playback without starting an actor.
+- `ASAdventurer.exe` and `ASAdventurerLAN.exe` built successfully with `pkg` 5.8.1 and GZip compression.
+- Both ZIP creation stages passed after the Archiver 8 correction.
+- The final `release/ASAdventurer.zip` archive was 30.5 MB.
+- Required launchers, checksum files, certificate setup, LAN and actor documentation, and the Streamer.bot helper source were present.
+- A clean-folder package test ran with the server on one computer and browser/OBS clients on another LAN computer.
+- The owner confirmed the main and actor OBS overlays rendered after the remote computer trusted the generated LAN root certificate.
+- GitHub reported no status contexts for PR #8, so no CI pass is claimed.
 
-### Remaining before release promotion
+### Recorded checksums
 
-- Build the LAN-enabled Windows release package.
-- Run a clean-folder package smoke test.
-- Mark and merge draft pull requests only after explicit owner approval.
+```text
+ASAdventurer.exe
+52fd671cab5767289e3218057024d0d3a3e4662d104a8369933ac529f8e8aa9b
+
+ASAdventurerLAN.exe
+ef35d7d20cca29ed2290ab6ae44f850c6292c66c541e5d661e942857928b14eb
+```
+
+### Remaining promotion sequence
+
+- Receive explicit owner approval before marking PR #8 ready or merging it into `agent/lan-mode`.
+- Retest the combined LAN integration branch after that merge.
+- Promote secure LAN mode to `main` only with separate explicit owner approval.
+- Optionally record a quantitative OBS CPU/GPU baseline.
