@@ -5,23 +5,26 @@
   "updated_at": "2026-08-01",
   "active_checkout": {
     "remote": "origin",
-    "branch": "agent/lan-mode",
+    "branch": "main",
     "base_branch": "main",
     "pull_request": 1,
-    "expected_head_ref": "origin/agent/lan-mode",
+    "expected_head_ref": "origin/main",
     "expected_base_ref": "origin/main",
-    "expected_head_rule": "After fetch and fast-forward update, local HEAD must equal origin/agent/lan-mode.",
+    "expected_head_rule": "After fetch and fast-forward update, local HEAD must equal origin/main.",
     "expected_base_rule": "origin/main must be an ancestor of local HEAD."
   },
   "github_snapshot": {
-    "observed_at": "2026-08-01T04:59:00-04:00",
+    "observed_at": "2026-08-01T05:17:00-04:00",
     "pull_request": 1,
-    "pull_request_state": "open",
-    "draft": true,
-    "mergeable": true,
+    "pull_request_state": "closed",
+    "merged": true,
+    "draft": false,
+    "mergeable": false,
+    "source_head_sha": "60b8c1b4f6f6b5de4f5ab4808a58b31e446e8b12",
+    "merge_commit_sha": "a7c17ed75aafe34dff62d88345a75278665fd564",
     "reported_commit_status_contexts": 0,
     "reported_commit_status": "none-reported",
-    "note": "PR #1 is the active integration pull request. Combined regression passed by owner confirmation. GitHub reported no commit status contexts; no CI pass is being claimed."
+    "note": "PR #1 is merged into main. No CI pass is being claimed."
   },
   "release_validation": {
     "windows_package_build": "passed-by-owner-output",
@@ -29,55 +32,39 @@
     "clean_folder_remote_obs_smoke_test": "passed-by-owner-confirmation",
     "phase_2_pr_8_merge": "merged-at-670e108f695ca76ec53b032a6bff51b562ef20d3",
     "combined_lan_regression": "passed-by-owner-confirmation",
+    "mainline_pr_1_merge": "merged-at-a7c17ed75aafe34dff62d88345a75278665fd564",
     "default_demo_model": "not-bundled",
     "remote_certificate_requirement": "Install the generated root certificate on each remote Windows browser or OBS computer and restart browser processes."
   },
-  "last_verified_checkout": {
-    "verified_at": "2026-07-29T09:53:00-04:00",
-    "verified_head_sha": "23a36f3c5842c7bbc7d983dad073011ba9e85118",
-    "verified_base_sha": "ea9c4317e860c14199ad7547cc579000161de4ba",
-    "branch": "agent/ai-actors-control-panel",
-    "base_branch": "agent/lan-mode",
-    "pull_request": 8,
-    "result": "historical-feature-checkout",
-    "note": "This checkout predates the PR #8 merge. The active source of truth is now the fetched origin/agent/lan-mode ref."
-  },
   "last_promotion": {
-    "promoted_at": "2026-08-01T04:11:55-04:00",
-    "pull_request": 8,
-    "source_branch": "agent/ai-actors-control-panel",
-    "target_branch": "agent/lan-mode",
-    "source_head_sha": "03ba6e4a1b0b779bc801597704832c499336558b",
-    "merge_commit_sha": "670e108f695ca76ec53b032a6bff51b562ef20d3",
+    "promoted_at": "2026-08-01T05:09:59-04:00",
+    "pull_request": 1,
+    "source_branch": "agent/lan-mode",
+    "target_branch": "main",
+    "source_head_sha": "60b8c1b4f6f6b5de4f5ab4808a58b31e446e8b12",
+    "merge_commit_sha": "a7c17ed75aafe34dff62d88345a75278665fd564",
     "result": "merged-by-explicit-owner-approval"
   },
   "last_validation": {
     "validated_at": "2026-08-01T04:59:00-04:00",
     "working_branch": "agent/lan-mode",
     "pull_request": 1,
-    "result": "combined-lan-regression-passed-by-owner-confirmation",
-    "scope": [
-      "localhost-only default launcher and ordinary overlay",
-      "secure LAN registration, global models, private assets, model selection, and emotes",
-      "AI Actor lifecycle, overlays, expressions, speaking state, reset, emotes, and nested sub-animations",
-      "Streamer.bot actor API and serial mapped TTS cleanup",
-      "remote main and actor OBS rendering and LAN restart recovery"
-    ]
+    "result": "combined-lan-regression-passed-by-owner-confirmation"
   },
   "local_checks": [
     {
       "id": "working-branch",
       "command": "git branch --show-current",
-      "expected": "agent/lan-mode"
+      "expected": "main"
     },
     {
       "id": "expected-head",
-      "command": "git rev-parse HEAD && git rev-parse origin/agent/lan-mode",
+      "command": "git rev-parse HEAD && git rev-parse origin/main",
       "expected": "Both commands print the same SHA."
     },
     {
       "id": "ahead-behind",
-      "command": "git rev-list --left-right --count HEAD...origin/agent/lan-mode",
+      "command": "git rev-list --left-right --count HEAD...origin/main",
       "expected": "0 0"
     },
     {
@@ -101,20 +88,21 @@
       "git clone https://github.com/XorishiTtv/angelssword-adventurers-overlay.git",
       "cd angelssword-adventurers-overlay",
       "git fetch --prune origin",
-      "git switch --track -c agent/lan-mode origin/agent/lan-mode",
+      "git switch main",
+      "git pull --ff-only origin main",
       "npm ci",
       "npm run status:check"
     ],
     "update_existing_checkout": [
       "git status --short",
       "git fetch --prune origin",
-      "git switch agent/lan-mode",
-      "git pull --ff-only origin agent/lan-mode",
+      "git switch main",
+      "git pull --ff-only origin main",
       "npm ci",
       "npm run status:check"
     ],
     "github_pr_status": [
-      "gh pr view 1 --repo XorishiTtv/angelssword-adventurers-overlay --json number,state,isDraft,mergeable,baseRefName,baseRefOid,headRefName,headRefOid,url",
+      "gh pr view 1 --repo XorishiTtv/angelssword-adventurers-overlay --json number,state,isDraft,mergedAt,baseRefName,headRefName,headRefOid,mergeCommit,url",
       "gh pr checks 1 --repo XorishiTtv/angelssword-adventurers-overlay"
     ]
   },
@@ -124,13 +112,13 @@
     "audit_rule": "Do not run npm audit fix automatically during checkout verification."
   },
   "sha_policy": {
-    "source_of_truth": "The fetched remote tracking ref origin/agent/lan-mode.",
-    "rule": "A SHA written inside the repository becomes historical when a later status commit advances the branch.",
-    "handoff_rule": "Every handoff must report the exact current remote head SHA after all commits are complete."
+    "source_of_truth": "The fetched remote tracking ref origin/main.",
+    "rule": "A SHA written inside the repository becomes historical when a later status commit advances main.",
+    "handoff_rule": "Every handoff must report the exact current origin/main SHA after all commits are complete."
   },
   "safety": {
     "update_mode": "Use git pull --ff-only so an update cannot silently create a merge commit.",
     "dirty_checkout": "Commit, stash, or intentionally discard local changes before updating.",
-    "pr_promotion": "Combined regression passed. PR #1 must remain draft and unmerged until the owner explicitly instructs marking it ready and, separately, merging it."
+    "release_administration": "Creating tags, publishing releases, uploading artifacts, or deleting branches requires explicit owner approval."
   }
 }
