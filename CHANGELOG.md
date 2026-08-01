@@ -22,9 +22,10 @@ All notable user-visible changes to AS Adventurer are recorded here.
 - `gnisu` and `dascribe` are validated production actor identities; unmapped broadcaster playback remains on the original OpenAI path.
 - Fresh and updated checkouts use `npm ci` and fast-forward-only pulls.
 - Phase 2 AI Actors was merged through PR #8 into `agent/lan-mode` at merge commit `670e108f695ca76ec53b032a6bff51b562ef20d3`.
-- The active checkout contract now uses `agent/lan-mode` against `main` through draft PR #1.
-- The combined LAN regression test is the immediate promotion gate.
-- PR #1 remains draft and unmerged until regression validation and separate explicit owner approval.
+- The active checkout contract uses `agent/lan-mode` against `main` through draft PR #1.
+- The combined LAN regression gate is complete by owner confirmation.
+- The explicit PR #1 promotion decision is now the immediate roadmap item.
+- PR #1 remains draft and unmerged until separately instructed otherwise.
 
 ### Fixed
 
@@ -36,7 +37,7 @@ All notable user-visible changes to AS Adventurer are recorded here.
 
 ### Validated
 
-- Main and actor overlays rendered in browser and OBS through same-computer localhost and remote secure-LAN setups before the integration merge.
+- Main and actor overlays rendered in browser and OBS through same-computer localhost and remote secure-LAN setups.
 - Actor expression, speaking, reset, Type 2 emote, nested sub-animation, and release behavior passed live testing.
 - The Streamer.bot helper compiled and all seven named methods passed live testing.
 - Production `gnisu` and `dascribe` requests completed isolated start, blocking playback, and stop lifecycles through the accepted serial queue.
@@ -48,6 +49,7 @@ All notable user-visible changes to AS Adventurer are recorded here.
 - A clean-folder package test ran with the server on one computer and browser/OBS clients on another LAN computer.
 - The owner confirmed the main and actor OBS overlays rendered after the remote computer trusted the generated LAN root certificate.
 - PR #8 merged into `agent/lan-mode` using the verified feature head `03ba6e4a1b0b779bc801597704832c499336558b`.
+- The owner confirmed the post-merge `agent/lan-mode` regression was in working order for the localhost-only launcher, secure LAN registration and assets, global and private models, emotes, AI Actors, Streamer.bot serial TTS, remote OBS rendering, and LAN restart recovery.
 - GitHub reported no status contexts for the active integration pull request, so no CI pass is claimed.
 
 ### Recorded checksums
@@ -62,7 +64,6 @@ ef35d7d20cca29ed2290ab6ae44f850c6292c66c541e5d661e942857928b14eb
 
 ### Remaining promotion sequence
 
-- Run the combined localhost, secure-LAN, AI Actor, Streamer.bot, and OBS restart regression from `agent/lan-mode`.
-- Mark PR #1 ready only with explicit owner approval after regression validation.
+- Mark PR #1 ready only with explicit owner approval.
 - Merge PR #1 into `main` only with a separate explicit owner instruction.
 - Optionally record a quantitative OBS CPU/GPU baseline.
