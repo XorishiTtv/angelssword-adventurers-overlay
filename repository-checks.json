@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0.0",
+  "project": "AS Adventurer",
+  "repository": "XorishiTtv/angelssword-adventurers-overlay",
+  "updated_at": "2026-08-01",
+  "active_checkout": {
+    "remote": "origin",
+    "branch": "agent/ai-actors-control-panel",
+    "base_branch": "agent/lan-mode",
+    "pull_request": 8,
+    "expected_head_ref": "origin/agent/ai-actors-control-panel",
+    "expected_base_ref": "origin/agent/lan-mode",
+    "expected_head_rule": "After fetch and fast-forward update, local HEAD must equal origin/agent/ai-actors-control-panel.",
+    "expected_base_rule": "origin/agent/lan-mode must be an ancestor of local HEAD."
+  },
+  "github_snapshot": {
+    "observed_at": "2026-08-01T03:59:00-04:00",
+    "pull_request_state": "open",
+    "draft": true,
+    "mergeable": true,
+    "reported_commit_status_contexts": 0,
+    "reported_commit_status": "none-reported",
+    "note": "GitHub reported no commit status contexts for the observed PR head. No CI pass is being claimed."
+  },
+  "release_validation": {
+    "windows_package_build": "passed-by-owner-output",
+    "required_package_files": "passed-by-owner-output",
+    "clean_folder_remote_obs_smoke_test": "passed-by-owner-confirmation",
+    "default_demo_model": "not-bundled",
+    "remote_certificate_requirement": "Install the generated root certificate on each remote Windows browser or OBS computer and restart browser processes."
+  },
+  "last_verified_checkout": {
+    "verified_at": "2026-07-29T09:53:00-04:00",
+    "verified_head_sha": "23a36f3c5842c7bbc7d983dad073011ba9e85118",
+    "verified_base_sha": "ea9c4317e860c14199ad7547cc579000161de4ba",
+    "branch": "agent/ai-actors-control-panel",
+    "base_branch": "agent/lan-mode",
+    "pull_request": 8,
+    "result": "accepted-by-owner-for-progression",
+    "note": "This SHA is historical. Always fetch the expected head ref before beginning work."
+  },
+  "local_checks": [
+    {"id":"working-branch","command":"git branch --show-current","expected":"agent/ai-actors-control-panel"},
+    {"id":"expected-head","command":"git rev-parse HEAD && git rev-parse origin/agent/ai-actors-control-panel","expected":"Both commands print the same SHA."},
+    {"id":"ahead-behind","command":"git rev-list --left-right --count HEAD...origin/agent/ai-actors-control-panel","expected":"0 0"},
+    {"id":"clean-worktree","command":"git status --short","expected":"No output."},
+    {"id":"base-ancestry","command":"git merge-base --is-ancestor origin/agent/lan-mode HEAD","expected":"Exit code 0."},
+    {"id":"project-records","command":"npm run status:check","expected":"All checks pass."}
+  ],
+  "commands": {
+    "update_existing_checkout": [
+      "git status --short",
+      "git fetch --prune origin",
+      "git switch agent/ai-actors-control-panel",
+      "git pull --ff-only origin agent/ai-actors-control-panel",
+      "npm ci",
+      "npm run status:check"
+    ],
+    "github_pr_status": [
+      "gh pr view 8 --repo XorishiTtv/angelssword-adventurers-overlay --json number,state,isDraft,mergeable,baseRefName,baseRefOid,headRefName,headRefOid,url",
+      "gh pr checks 8 --repo XorishiTtv/angelssword-adventurers-overlay"
+    ]
+  },
+  "dependency_install_policy": {
+    "checkout_command": "npm ci",
+    "reason": "Install exactly from package-lock.json without an incidental lockfile rewrite.",
+    "audit_rule": "Do not run npm audit fix automatically during checkout verification."
+  },
+  "sha_policy": {
+    "source_of_truth": "The fetched remote tracking ref origin/agent/ai-actors-control-panel.",
+    "handoff_rule": "Every handoff must report the exact current remote head SHA after all commits are complete."
+  },
+  "safety": {
+    "update_mode": "Use git pull --ff-only so an update cannot silently create a merge commit.",
+    "dirty_checkout": "Commit, stash, or intentionally discard local changes before updating.",
+    "pr_promotion": "PR #8 must remain draft and unmerged until the owner explicitly instructs otherwise."
+  }
+}

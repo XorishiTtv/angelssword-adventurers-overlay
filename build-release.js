@@ -408,7 +408,7 @@ console.log();
 
 // 11. Create zip archive in release/
 log('Creating zip archive...');
-const archiver = require('archiver');
+const { ZipArchive } = require('archiver');
 const RELEASE_DIR = path.join(ROOT, 'release');
 const ZIP_PATH = path.join(RELEASE_DIR, 'ASAdventurer.zip');
 
@@ -416,7 +416,7 @@ const ZIP_PATH = path.join(RELEASE_DIR, 'ASAdventurer.zip');
 if (fs.existsSync(ZIP_PATH)) fs.unlinkSync(ZIP_PATH);
 
 const output = fs.createWriteStream(ZIP_PATH);
-const archive = archiver('zip', { zlib: { level: 9 } });
+const archive = new ZipArchive({ zlib: { level: 9 } });
 
 output.on('close', () => {
   const zipMB = (archive.pointer() / 1024 / 1024).toFixed(1);

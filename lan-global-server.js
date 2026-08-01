@@ -18,11 +18,31 @@ machineMode.installMachineMode = function installMachineGlobalAndActorModes(opti
       return result.authenticateWebSocket(request) || actorMode.authenticateWebSocket(request);
     },
     attachSocket(socket, context) {
-      if (context?.kind === 'actor') return actorMode.attachSocket(socket, context);
+      if (context?.kind === 'actor') {
+        actorMode.attachSocket(socket, context);
+
+        // A reconnect can occur after the actor changed models or after the
+        // overlay first loaded while the LAN server was unavailable. Replay the
+        // persisted model directly to this socket before actor-mode sends its
+        // expression/speaking bootstrap, so the client can rebuild its layers.
+        const bootstrap = setTimeout(() => {
+          if (socket.readyState === 1 && typeof socket._asNativeSend === 'function') {
+            socket._asNativeSend(JSON.stringify({
+              type: 'model_change',
+              model: context.actor.activeModel,
+              actorId: context.actor.id,
+              reason: 'socket_bootstrap'
+            }));
+          }
+        }, 5);
+        bootstrap.unref?.();
+        return;
+      }
       return result.attachSocket(socket, context);
     },
     getActorCount: actorMode.getActorCount
   };
 };
 
+require('./actor-control-bootstrap');
 require('./lan-server');
