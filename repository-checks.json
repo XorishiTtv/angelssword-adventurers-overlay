@@ -5,27 +5,30 @@
   "updated_at": "2026-08-01",
   "active_checkout": {
     "remote": "origin",
-    "branch": "agent/ai-actors-control-panel",
-    "base_branch": "agent/lan-mode",
-    "pull_request": 8,
-    "expected_head_ref": "origin/agent/ai-actors-control-panel",
-    "expected_base_ref": "origin/agent/lan-mode",
-    "expected_head_rule": "After fetch and fast-forward update, local HEAD must equal origin/agent/ai-actors-control-panel.",
-    "expected_base_rule": "origin/agent/lan-mode must be an ancestor of local HEAD."
+    "branch": "agent/lan-mode",
+    "base_branch": "main",
+    "pull_request": 1,
+    "expected_head_ref": "origin/agent/lan-mode",
+    "expected_base_ref": "origin/main",
+    "expected_head_rule": "After fetch and fast-forward update, local HEAD must equal origin/agent/lan-mode.",
+    "expected_base_rule": "origin/main must be an ancestor of local HEAD."
   },
   "github_snapshot": {
-    "observed_at": "2026-08-01T03:59:00-04:00",
+    "observed_at": "2026-08-01T04:23:00-04:00",
+    "pull_request": 1,
     "pull_request_state": "open",
     "draft": true,
     "mergeable": true,
     "reported_commit_status_contexts": 0,
     "reported_commit_status": "none-reported",
-    "note": "GitHub reported no commit status contexts for the observed PR head. No CI pass is being claimed."
+    "note": "PR #1 is the active integration pull request. GitHub reported no commit status contexts; no CI pass is being claimed."
   },
   "release_validation": {
     "windows_package_build": "passed-by-owner-output",
     "required_package_files": "passed-by-owner-output",
     "clean_folder_remote_obs_smoke_test": "passed-by-owner-confirmation",
+    "phase_2_pr_8_merge": "merged-at-670e108f695ca76ec53b032a6bff51b562ef20d3",
+    "combined_lan_regression": "pending",
     "default_demo_model": "not-bundled",
     "remote_certificate_requirement": "Install the generated root certificate on each remote Windows browser or OBS computer and restart browser processes."
   },
@@ -36,29 +39,70 @@
     "branch": "agent/ai-actors-control-panel",
     "base_branch": "agent/lan-mode",
     "pull_request": 8,
-    "result": "accepted-by-owner-for-progression",
-    "note": "This SHA is historical. Always fetch the expected head ref before beginning work."
+    "result": "historical-feature-checkout",
+    "note": "This checkout predates the PR #8 merge. The active source of truth is now the fetched origin/agent/lan-mode ref."
+  },
+  "last_promotion": {
+    "promoted_at": "2026-08-01T04:11:55-04:00",
+    "pull_request": 8,
+    "source_branch": "agent/ai-actors-control-panel",
+    "target_branch": "agent/lan-mode",
+    "source_head_sha": "03ba6e4a1b0b779bc801597704832c499336558b",
+    "merge_commit_sha": "670e108f695ca76ec53b032a6bff51b562ef20d3",
+    "result": "merged-by-explicit-owner-approval"
   },
   "local_checks": [
-    {"id":"working-branch","command":"git branch --show-current","expected":"agent/ai-actors-control-panel"},
-    {"id":"expected-head","command":"git rev-parse HEAD && git rev-parse origin/agent/ai-actors-control-panel","expected":"Both commands print the same SHA."},
-    {"id":"ahead-behind","command":"git rev-list --left-right --count HEAD...origin/agent/ai-actors-control-panel","expected":"0 0"},
-    {"id":"clean-worktree","command":"git status --short","expected":"No output."},
-    {"id":"base-ancestry","command":"git merge-base --is-ancestor origin/agent/lan-mode HEAD","expected":"Exit code 0."},
-    {"id":"project-records","command":"npm run status:check","expected":"All checks pass."}
+    {
+      "id": "working-branch",
+      "command": "git branch --show-current",
+      "expected": "agent/lan-mode"
+    },
+    {
+      "id": "expected-head",
+      "command": "git rev-parse HEAD && git rev-parse origin/agent/lan-mode",
+      "expected": "Both commands print the same SHA."
+    },
+    {
+      "id": "ahead-behind",
+      "command": "git rev-list --left-right --count HEAD...origin/agent/lan-mode",
+      "expected": "0 0"
+    },
+    {
+      "id": "clean-worktree",
+      "command": "git status --short",
+      "expected": "No output."
+    },
+    {
+      "id": "base-ancestry",
+      "command": "git merge-base --is-ancestor origin/main HEAD",
+      "expected": "Exit code 0."
+    },
+    {
+      "id": "project-records",
+      "command": "npm run status:check",
+      "expected": "All checks pass."
+    }
   ],
   "commands": {
+    "fresh_checkout": [
+      "git clone https://github.com/XorishiTtv/angelssword-adventurers-overlay.git",
+      "cd angelssword-adventurers-overlay",
+      "git fetch --prune origin",
+      "git switch --track -c agent/lan-mode origin/agent/lan-mode",
+      "npm ci",
+      "npm run status:check"
+    ],
     "update_existing_checkout": [
       "git status --short",
       "git fetch --prune origin",
-      "git switch agent/ai-actors-control-panel",
-      "git pull --ff-only origin agent/ai-actors-control-panel",
+      "git switch agent/lan-mode",
+      "git pull --ff-only origin agent/lan-mode",
       "npm ci",
       "npm run status:check"
     ],
     "github_pr_status": [
-      "gh pr view 8 --repo XorishiTtv/angelssword-adventurers-overlay --json number,state,isDraft,mergeable,baseRefName,baseRefOid,headRefName,headRefOid,url",
-      "gh pr checks 8 --repo XorishiTtv/angelssword-adventurers-overlay"
+      "gh pr view 1 --repo XorishiTtv/angelssword-adventurers-overlay --json number,state,isDraft,mergeable,baseRefName,baseRefOid,headRefName,headRefOid,url",
+      "gh pr checks 1 --repo XorishiTtv/angelssword-adventurers-overlay"
     ]
   },
   "dependency_install_policy": {
@@ -67,12 +111,13 @@
     "audit_rule": "Do not run npm audit fix automatically during checkout verification."
   },
   "sha_policy": {
-    "source_of_truth": "The fetched remote tracking ref origin/agent/ai-actors-control-panel.",
+    "source_of_truth": "The fetched remote tracking ref origin/agent/lan-mode.",
+    "rule": "A SHA written inside the repository becomes historical when a later status commit advances the branch.",
     "handoff_rule": "Every handoff must report the exact current remote head SHA after all commits are complete."
   },
   "safety": {
     "update_mode": "Use git pull --ff-only so an update cannot silently create a merge commit.",
     "dirty_checkout": "Commit, stash, or intentionally discard local changes before updating.",
-    "pr_promotion": "PR #8 must remain draft and unmerged until the owner explicitly instructs otherwise."
+    "pr_promotion": "PR #1 must remain draft and unmerged until combined regression passes and the owner explicitly instructs each promotion action."
   }
 }
