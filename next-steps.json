@@ -7,46 +7,21 @@
   "items": [
     {
       "order": 1,
-      "id": "local-checkout-verification",
-      "title": "Update and verify the feature checkout",
-      "status": "complete",
-      "guide": "LOCAL_CHECKOUT.md",
-      "completed_at": "2026-07-29T09:53:00-04:00",
-      "verified_head_sha": "23a36f3c5842c7bbc7d983dad073011ba9e85118",
-      "verified_base_sha": "ea9c4317e860c14199ad7547cc579000161de4ba",
-      "completion_note": "This is a historical feature-branch checkout. The active checkout contract is now agent/lan-mode against main."
+      "id": "production-tts-integration",
+      "title": "Connect actor helper calls to production TTS",
+      "status": "complete"
     },
     {
       "order": 2,
-      "id": "production-tts-integration",
-      "title": "Connect actor helper calls to the production TTS workflow",
-      "status": "complete",
-      "guide": "streamerbot/PRODUCTION_TTS_INTEGRATION.md",
-      "completed_at": "2026-08-01T01:29:17-04:00",
-      "validated_identity": "gnisu"
+      "id": "multi-actor-tts-validation",
+      "title": "Validate serial multi-actor TTS isolation",
+      "status": "complete"
     },
     {
       "order": 3,
-      "id": "end-to-end-multi-actor-tts-test",
-      "title": "Run an end-to-end multi-actor TTS isolation test",
-      "status": "complete",
-      "guide": "streamerbot/MULTI_ACTOR_TTS_TEST.md",
-      "completed_at": "2026-08-01T02:19:08-04:00",
-      "validated_identities": ["gnisu", "dascribe"],
-      "design_decision": {
-        "production_queue": "single-serial-queue",
-        "reason": "Keep live streams clean and understandable by allowing one synthesized voice at a time.",
-        "overlap_test": "not-applicable-by-design"
-      }
-    },
-    {
-      "order": 4,
       "id": "packaged-windows-build",
       "title": "Build the LAN-enabled Windows release",
       "status": "complete",
-      "command": "npm run build-release:lan",
-      "completed_at": "2026-08-01T03:59:00-04:00",
-      "completion_note": "The standard and LAN executables, checksum files, required support files, and final 30.5 MB release ZIP were produced. The Archiver 8 ZipArchive correction passed in both ZIP stages.",
       "artifacts": {
         "archive": "release/ASAdventurer.zip",
         "archive_size_mb": 30.5,
@@ -55,59 +30,54 @@
       }
     },
     {
-      "order": 5,
+      "order": 4,
       "id": "clean-folder-smoke-test",
       "title": "Smoke-test the packaged release from a clean folder",
-      "status": "complete",
-      "completed_at": "2026-08-01T03:59:00-04:00",
-      "completion_note": "The extracted package ran across two LAN computers. The remote browser worked, and the main and actor OBS overlays rendered after the generated root certificate was installed and browser/OBS processes were restarted on the OBS computer."
+      "status": "complete"
     },
     {
-      "order": 6,
-      "id": "pr-8-release-gate",
-      "title": "Update PR #8 after release validation",
-      "status": "complete",
-      "completed_at": "2026-08-01T03:59:00-04:00",
-      "completion_note": "Release validation and remaining promotion steps were documented before promotion."
-    },
-    {
-      "order": 7,
+      "order": 5,
       "id": "merge-pr-8",
       "title": "Promote Phase 2 AI Actors into agent/lan-mode",
       "status": "complete",
-      "completed_at": "2026-08-01T04:11:55-04:00",
-      "requires_explicit_owner_approval": true,
-      "merge_commit_sha": "670e108f695ca76ec53b032a6bff51b562ef20d3",
-      "completion_note": "The owner explicitly approved marking PR #8 ready and then merging it. PR #8 is closed and merged into agent/lan-mode."
+      "merge_commit_sha": "670e108f695ca76ec53b032a6bff51b562ef20d3"
     },
     {
-      "order": 8,
+      "order": 6,
       "id": "combined-lan-regression",
       "title": "Retest the combined LAN integration branch",
       "status": "complete",
-      "completed_at": "2026-08-01T04:59:00-04:00",
-      "working_branch": "agent/lan-mode",
-      "base_branch": "main",
-      "pull_request": 1,
-      "completion_note": "The owner confirmed the combined branch was in working order across localhost mode, secure LAN registration and assets, AI Actors, Streamer.bot serial TTS, remote OBS rendering, and LAN restart recovery.",
-      "acceptance_criteria": [
-        "The default launcher remains localhost-only and the normal control panel and overlay still work",
-        "Secure LAN certificate setup and trusted remote HTTPS access work",
-        "Machine registration, global models, private uploads, model selection, and emotes work",
-        "AI Actor creation, actor overlays, expressions, speaking state, reset, emotes, and nested sub-animations work",
-        "Streamer.bot reaches the actor API and mapped serial TTS returns each actor to idle",
-        "Main and actor OBS sources render remotely and recover after the LAN process restarts",
-        "No live machine token, actor token, complete authenticated OBS URL, certificate key, or password is recorded"
+      "completion_note": "The owner confirmed localhost mode, secure LAN, AI Actors, Streamer.bot, remote OBS rendering, and restart recovery were in working order."
+    },
+    {
+      "order": 7,
+      "id": "merge-pr-1",
+      "title": "Promote the combined integration to main",
+      "status": "complete",
+      "completed_at": "2026-08-01T05:09:59-04:00",
+      "source_head_sha": "60b8c1b4f6f6b5de4f5ab4808a58b31e446e8b12",
+      "merge_commit_sha": "a7c17ed75aafe34dff62d88345a75278665fd564",
+      "completion_note": "PR #1 was marked ready and merged only after separate explicit owner instructions."
+    },
+    {
+      "order": 8,
+      "id": "release-administration-decision",
+      "title": "Choose the release version and publishing plan",
+      "status": "next",
+      "requires_explicit_owner_approval": true,
+      "options": [
+        "Choose a version and Git tag",
+        "Publish the validated Windows archive as a GitHub Release",
+        "Decide whether completed integration branches should be retained or deleted"
       ]
     },
     {
       "order": 9,
-      "id": "merge-pr-1",
-      "title": "Owner decision for PR #1 promotion to main",
-      "status": "next",
-      "blocked_by": [],
-      "requires_explicit_owner_approval": true,
-      "notes": "Combined regression is complete. Marking PR #1 ready and merging PR #1 remain separate actions and each requires an explicit owner instruction."
+      "id": "publish-github-release",
+      "title": "Publish the validated Windows archive",
+      "status": "blocked",
+      "blocked_by": ["release-administration-decision"],
+      "requires_explicit_owner_approval": true
     },
     {
       "order": 10,
@@ -115,11 +85,18 @@
       "title": "Record an optional OBS CPU and GPU baseline",
       "status": "planned",
       "notes": "Useful evidence, but not required for functional correctness."
+    },
+    {
+      "order": 11,
+      "id": "integration-branch-cleanup",
+      "title": "Decide whether to retain completed integration branches",
+      "status": "planned",
+      "notes": "Branch deletion is optional and requires explicit owner approval."
     }
   ],
   "maintenance": {
-    "rule": "When an item is completed, record the result in project-status.json, mark the roadmap item complete, update updated_at in all three JSON records, and add a concise CHANGELOG.md entry.",
+    "rule": "When an item is completed, record the result in project-status.json, update this roadmap, refresh repository-checks.json, and add a concise CHANGELOG.md entry.",
     "checkout_rule": "Use npm ci, then run npm run status:check after fetching and before beginning the next work item.",
-    "security": "Never place live tokens, authenticated OBS URLs, or certificate secrets in roadmap files."
+    "security": "Never place live credentials, authenticated OBS addresses, or private certificate material in roadmap files."
   }
 }
