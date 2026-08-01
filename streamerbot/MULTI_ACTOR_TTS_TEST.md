@@ -1,8 +1,10 @@
-# Multi-actor production TTS isolation test
+# Serial multi-actor production TTS validation
 
-This runbook is the release gate after the first production actor identity has passed. The first validated identity is `gnisu`; its actor entered speaking before Kokoro playback, remained active through blocking playback, and returned to idle through `StopTts()`.
+This runbook records the production release gate after the first actor identity passed. The validated mapped identities are `gnisu` and `dascribe`.
 
-The goal of this test is to prove that production identity routing and actor speech sessions remain isolated when more than one actor is configured.
+Production TTS intentionally uses one serial queue. One voice completes actor start, blocking playback, and actor stop before the next queued voice begins. This keeps streams clean and understandable. Simultaneous production speech is not supported or required.
+
+The goal of this test is to prove that identity routing remains isolated across the accepted serial queue and that unmapped identities keep their original non-actor playback path.
 
 ## Security rules
 
@@ -15,7 +17,7 @@ The goal of this test is to prove that production identity routing and actor spe
 
 - Secure LAN mode is running at the configured private origin.
 - The latest `streamerbot/ASAdventurerActorHelper.cs` is compiled under the code-source name `AS Adventurer Actor Helper`.
-- The production TTS action uses direct blocking playback through `ttsAudioPath`.
+- Production TTS uses direct blocking playback through `ttsAudioPath`.
 - File Watcher playback is disabled for files that the production action plays directly.
 - The `gnisu` production start, playback, and stop cycle passes.
 - Two actor OBS browser sources are connected and visibly distinguishable.
@@ -70,41 +72,24 @@ Start and stop return HTTP 200
 The matching stop reports stale = false
 ```
 
-## Test C: overlapping actors
+## Test C: serial queue isolation
 
-Start a long request for `gnisu`. Before it finishes, start a long request for the second mapped identity.
-
-Expected:
-
-```text
-Both assigned actors may speak at the same time
-Each actor displays only its own speaking state
-Completion of one identity returns only its assigned actor to idle
-The other actor remains speaking until its own playback completes
-Neither stop reports stale for its matching current session
-```
-
-This test proves that the helper's actor-scoped session global and the server's actor-scoped state do not cross actor boundaries.
-
-## Test D: back-to-back stale-session protection
-
-For either mapped identity:
-
-1. Start request A.
-2. Start request B for the same identity before A's delayed cleanup runs.
-3. Allow A's cleanup to run.
-4. Allow B's cleanup to run.
+Submit mapped requests close together so the second request enters the queue while the first is still active.
 
 Expected:
 
 ```text
-A's delayed stop returns HTTP 200 with stale = true
-The actor remains speaking for request B
-B's stop returns HTTP 200 with stale = false
-The actor returns to idle after B completes
+The second request waits in the production queue
+Only one actor is speaking at any moment
+The first actor stops after its own blocking playback
+The second actor starts only after the first actor has stopped
+Each identity controls only its assigned actor
+The queue drains cleanly after the final stop
 ```
 
-## Test E: unmapped fallback
+This test replaces the earlier overlap proposal. Overlap is not applicable because the accepted production design deliberately serializes all voices.
+
+## Test D: unmapped fallback
 
 Run one production TTS request using an identity with no actor mapping.
 
@@ -116,20 +101,22 @@ No actor enters speaking
 No actor token is loaded
 No StartTts or StopTts request is sent
 The original non-actor TTS and overlay behavior remains unchanged
-Audio still plays successfully
+Audio still plays successfully through direct blocking playback
 ```
 
 ## Actor-scope regression checks
 
-While both mappings exist, exercise one expression or emote command against each actor.
+Actor-scoped expression, reset, emote, sub-emote, release, cross-action session lookup, and stale-session protection are helper and actor-API checks. They were exercised separately during the live helper validation.
 
-Expected:
+The production serial queue prevents concurrent same-identity cleanup, so a production back-to-back stale-stop race is not applicable. The helper's stale-session protection remains required and already passed its dedicated live test.
+
+Expected actor-scope behavior remains:
 
 ```text
 An expression change affects only the targeted actor
 An emote trigger affects only the targeted actor
 Releasing or resetting one actor does not alter the other actor
-A TTS stop for one actor does not clear the other actor's active session
+A stale stop cannot clear a newer actor speech session
 ```
 
 ## Non-secret evidence to record
@@ -142,21 +129,22 @@ Playback action used by each identity
 Start status code for each actor
 Stop status code for each actor
 Stop stale value for normal completion
-Overlapping actors remained isolated: yes/no
-Back-to-back stale protection passed: yes/no
+Queued mapped identities remained isolated: yes/no
+Only one actor spoke at a time: yes/no
 Unmapped fallback remained unchanged: yes/no
-Expression and emote scope passed: yes/no
+Previously validated actor-scope helper checks remain passed: yes/no
 No token appeared in logs: yes/no
 ```
 
 ## Acceptance gate
 
-The multi-actor production gate passes only when:
+The serial multi-actor production gate passes when:
 
 - both mapped identities activate only their assigned actors;
-- overlapping playback does not cause cross-actor stops;
-- stale cleanup from an older request cannot stop a newer request for the same actor;
-- an unmapped identity remains on the existing path; and
-- actor expressions and emotes remain isolated.
+- speaking begins before each mapped identity's audible playback and returns to idle afterward;
+- requests queued close together are processed one at a time without cross-actor state changes;
+- an unmapped identity remains on the existing non-actor path;
+- the independently validated actor-scoped expression, emote, and stale-session protections remain intact; and
+- no raw actor token appears in logs or repository files.
 
 After this gate passes, update `project-status.json`, `next-steps.json`, and `CHANGELOG.md`, then advance to the LAN-enabled Windows package build.
