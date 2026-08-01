@@ -7,96 +7,68 @@
   "items": [
     {
       "order": 1,
-      "id": "production-tts-integration",
-      "title": "Connect actor helper calls to production TTS",
-      "status": "complete"
+      "id": "mainline-secure-lan-ai-actors",
+      "title": "Promote the original secure LAN and AI Actor integration to main",
+      "status": "complete",
+      "merge_commit_sha": "a7c17ed75aafe34dff62d88345a75278665fd564"
     },
     {
       "order": 2,
-      "id": "multi-actor-tts-validation",
-      "title": "Validate serial multi-actor TTS isolation",
-      "status": "complete"
+      "id": "actor-capabilities-foundation",
+      "title": "Add sanitized actor capability discovery",
+      "status": "complete",
+      "completion_note": "The endpoint, LAN bootstrap, companion Streamer.bot helper source, and integration guide are committed on the feature branch."
     },
     {
       "order": 3,
-      "id": "packaged-windows-build",
-      "title": "Build the LAN-enabled Windows release",
-      "status": "complete",
-      "artifacts": {
-        "archive": "release/ASAdventurer.zip",
-        "archive_size_mb": 30.5,
-        "standard_sha256": "52fd671cab5767289e3218057024d0d3a3e4662d104a8369933ac529f8e8aa9b",
-        "lan_sha256": "ef35d7d20cca29ed2290ab6ae44f850c6292c66c541e5d661e942857928b14eb"
-      }
-    },
-    {
-      "order": 4,
-      "id": "clean-folder-smoke-test",
-      "title": "Smoke-test the packaged release from a clean folder",
-      "status": "complete"
-    },
-    {
-      "order": 5,
-      "id": "merge-pr-8",
-      "title": "Promote Phase 2 AI Actors into agent/lan-mode",
-      "status": "complete",
-      "merge_commit_sha": "670e108f695ca76ec53b032a6bff51b562ef20d3"
-    },
-    {
-      "order": 6,
-      "id": "combined-lan-regression",
-      "title": "Retest the combined LAN integration branch",
-      "status": "complete",
-      "completion_note": "The owner confirmed localhost mode, secure LAN, AI Actors, Streamer.bot, remote OBS rendering, and restart recovery were in working order."
-    },
-    {
-      "order": 7,
-      "id": "merge-pr-1",
-      "title": "Promote the combined integration to main",
-      "status": "complete",
-      "completed_at": "2026-08-01T05:09:59-04:00",
-      "source_head_sha": "60b8c1b4f6f6b5de4f5ab4808a58b31e446e8b12",
-      "merge_commit_sha": "a7c17ed75aafe34dff62d88345a75278665fd564",
-      "completion_note": "PR #1 was marked ready and merged only after separate explicit owner instructions."
-    },
-    {
-      "order": 8,
-      "id": "release-administration-decision",
-      "title": "Choose the release version and publishing plan",
+      "id": "universalbot-and-tts-integration",
+      "title": "Install UniversalBot self-control parsing and carry visual intent through the TTS queue",
       "status": "next",
-      "requires_explicit_owner_approval": true,
-      "options": [
-        "Choose a version and Git tag",
-        "Publish the validated Windows archive as a GitHub Release",
-        "Decide whether completed integration branches should be retained or deleted"
+      "guide": "AI_SELF_ACTOR_CONTROLS.md",
+      "requirements": [
+        "Compile and install the personalized UniversalBot integration script",
+        "Add actorControl configuration to each bot profile",
+        "Copy validated visual intent into each immutable TTS queue item",
+        "Apply expression or emote immediately before playback",
+        "Preserve StartTts and StopTts speech-session cleanup",
+        "Release held Type 2 emotes after speech when requested"
       ]
     },
     {
-      "order": 9,
-      "id": "publish-github-release",
-      "title": "Publish the validated Windows archive",
+      "order": 4,
+      "id": "compile-capabilities-helper",
+      "title": "Compile and exercise the Streamer.bot capabilities helper",
+      "status": "planned",
+      "blocked_by": [],
+      "guide": "AI_SELF_ACTOR_CONTROLS.md"
+    },
+    {
+      "order": 5,
+      "id": "ai-self-control-isolation-regression",
+      "title": "Validate hidden commands, queue isolation, and cross-actor security",
       "status": "blocked",
-      "blocked_by": ["release-administration-decision"],
-      "requires_explicit_owner_approval": true
+      "blocked_by": ["universalbot-and-tts-integration", "compile-capabilities-helper"]
     },
     {
-      "order": 10,
-      "id": "quantitative-performance-baseline",
-      "title": "Record an optional OBS CPU and GPU baseline",
-      "status": "planned",
-      "notes": "Useful evidence, but not required for functional correctness."
+      "order": 6,
+      "id": "package-and-remote-obs-regression",
+      "title": "Rebuild and repeat packaged remote-LAN and OBS recovery tests",
+      "status": "blocked",
+      "blocked_by": ["ai-self-control-isolation-regression"]
     },
     {
-      "order": 11,
-      "id": "integration-branch-cleanup",
-      "title": "Decide whether to retain completed integration branches",
-      "status": "planned",
-      "notes": "Branch deletion is optional and requires explicit owner approval."
+      "order": 7,
+      "id": "promote-pr-9",
+      "title": "Owner decision for PR #9 promotion",
+      "status": "blocked",
+      "blocked_by": ["package-and-remote-obs-regression"],
+      "requires_explicit_owner_approval": true,
+      "notes": "Marking PR #9 ready and merging it remain separate explicit owner actions."
     }
   ],
   "maintenance": {
     "rule": "When an item is completed, record the result in project-status.json, update this roadmap, refresh repository-checks.json, and add a concise CHANGELOG.md entry.",
     "checkout_rule": "Use npm ci, then run npm run status:check after fetching and before beginning the next work item.",
-    "security": "Never place live credentials, authenticated OBS addresses, or private certificate material in roadmap files."
+    "security": "Never place live credentials, authenticated OBS addresses, capability request authorization values, or private certificate material in roadmap files."
   }
 }
