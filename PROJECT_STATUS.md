@@ -4,63 +4,60 @@ AS Adventurer keeps its active state in `project-status.json`, `next-steps.json`
 
 ## Current state
 
-The secure LAN and AI Actor integration is merged into `main`.
+The original secure LAN and AI Actor integration remains merged and validated on `main`. Development has resumed on draft PR #9 to let each AI character discover and select controls for its own actor.
 
-- PR #8 merged Phase 2 AI Actors into `agent/lan-mode` at `670e108f695ca76ec53b032a6bff51b562ef20d3`.
-- PR #1 merged the combined integration into `main` at `a7c17ed75aafe34dff62d88345a75278665fd564`.
-- PR #1 was marked ready and merged only after separate explicit owner approvals.
-- No auto-merge was enabled.
-
-Completed and validated areas include secure LAN registration and private assets, shared global models, AI Actor lifecycle and emotes, Streamer.bot actor controls, serial production TTS routing, overlay recovery, Windows packaging, clean-folder remote-LAN operation, and the combined post-merge regression.
-
-Production TTS intentionally uses one serial queue. One synthesized voice completes its actor start, blocking playback, and matching stop before the next voice begins.
-
-## Package validation
-
-The Windows package build produced both executables, both checksum files, both launchers, certificate setup files, LAN and actor documentation, the Streamer.bot helper source, and `release/ASAdventurer.zip` at 30.5 MB.
-
-Recorded executable checksums:
+The feature branch is:
 
 ```text
-ASAdventurer.exe
-52fd671cab5767289e3218057024d0d3a3e4662d104a8369933ac529f8e8aa9b
-
-ASAdventurerLAN.exe
-ef35d7d20cca29ed2290ab6ae44f850c6292c66c541e5d661e942857928b14eb
+agent/ai-self-actor-controls
 ```
 
-The optional `Queri` demo model was not bundled because it was absent from `public/assets`; a restored, uploaded, or global model is required for visible character media.
+The foundation now includes:
 
-## Validation summary
+- actor-token-authenticated `GET /api/actors/:actorId/capabilities`;
+- dynamic reporting of dedicated installed assets for the existing logical expressions;
+- URL-free Type 1, Type 2, and nested sub-emote catalogs;
+- a companion Streamer.bot capability helper; and
+- a documented hidden `ACTOR_CONTROL:` protocol and security boundary.
 
-The owner confirmed the completed integration worked across:
+The AI must never receive actor IDs, actor tokens, machine tokens, base URLs, OBS URLs, asset URLs, token hashes, certificate material, or filesystem paths. Raw actor tokens remain persisted Streamer.bot globals.
 
-- the localhost-only default launcher and ordinary control panel and overlay;
-- secure LAN certificate trust, registration, global models, private uploads, model selection, and emotes;
-- AI Actor creation, overlays, expressions, speaking state, reset, emotes, and nested sub-animations;
-- Streamer.bot actor API access and mapped serial TTS cleanup; and
-- remote main and actor OBS rendering plus LAN restart recovery.
+## Validation completed on this branch
 
-Remote Windows browser and OBS computers must trust the generated LAN root certificate and restart browser processes. Keep the server certificate bundle and password private on the host.
+- `node --check` passed for `actor-capabilities-mode.js` and `lan-global-server.js`.
+- A local filesystem and authentication harness verified dedicated expression discovery.
+- The harness verified Type 1, Type 2, and nested sub-emote discovery.
+- The harness rejected invalid authentication.
+- The capability response contained no token, token hash, media filename, or asset URL.
+- Structural delimiter checks passed for the companion C# helper source.
+
+The companion helper has not yet been compiled in Streamer.bot. No CI pass is claimed.
 
 ## Immediate next step
 
-Core implementation, package validation, regression testing, and mainline promotion are complete. The only immediate roadmap item is an owner decision on release administration:
+Install and compile the personalized UniversalBot integration, then carry the validated visual intent through the existing serial TTS queue.
 
-- choose a version and Git tag;
-- decide whether to publish the validated Windows archive as a GitHub Release; and
-- decide whether the completed integration branches should be retained or deleted.
+The queue item must retain its own actor key and visual intent so later AI replies cannot overwrite earlier pending messages. Apply the selected expression or emote immediately before playback, preserve Actor Helper speech-session cleanup, and release held Type 2 emotes after speech when requested.
 
-A quantitative OBS CPU/GPU baseline remains optional.
+The personalized UniversalBot integration script is intentionally distributed outside the public repository because it contains channel-specific behavior and local bot workflow details.
+
+## Remaining validation
+
+- compile and exercise `ASAdventurerActorCapabilitiesHelper.cs` in Streamer.bot;
+- verify valid and malformed hidden lines never appear in Twitch or TTS text;
+- verify unlisted expressions, emotes, paths, and cross-actor attempts are rejected;
+- verify multiple queued AI replies retain the correct actor intent;
+- verify TTS failure cleanup returns actors to idle and releases held emotes;
+- repeat remote browser, OBS, LAN restart, and Windows package regression.
 
 ## Active checkout contract
 
 ```text
 Repository:     XorishiTtv/angelssword-adventurers-overlay
-Working branch: main
+Working branch: agent/ai-self-actor-controls
 Base branch:    main
-Merged PR:      #1
-Expected head:  origin/main
+Pull request:   #9 (draft)
+Expected head:  origin/agent/ai-self-actor-controls
 Expected base:  origin/main
 ```
 
@@ -69,18 +66,12 @@ Update and verify the local checkout with:
 ```powershell
 git status --short
 git fetch --prune origin
-git switch main
-git pull --ff-only origin main
+git switch agent/ai-self-actor-controls
+git pull --ff-only origin agent/ai-self-actor-controls
 npm ci
 npm run status:check
 ```
 
-The checker verifies matching project dates, branch/base/PR consistency, current branch, remote-head equality, ahead/behind, clean worktree, base ancestry, and exactly one `next` roadmap item.
+## Promotion rule
 
-## GitHub checks
-
-GitHub reported no commit status contexts for the PR #1 merge commit, so no CI pass is claimed. The recorded local, package, browser, OBS, and Streamer.bot validation remains the release evidence.
-
-## Security rules
-
-Never place live credentials, complete authenticated OBS addresses, certificate private keys, or certificate passwords in repository records, logs, screenshots, or examples.
+PR #9 remains draft and unmerged. Marking it ready and merging it are separate actions, each requiring explicit owner approval after the runtime, queue, security, package, and remote OBS gates pass.
