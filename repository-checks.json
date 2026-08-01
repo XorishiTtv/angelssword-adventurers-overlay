@@ -14,21 +14,21 @@
     "expected_base_rule": "origin/main must be an ancestor of local HEAD."
   },
   "github_snapshot": {
-    "observed_at": "2026-08-01T04:23:00-04:00",
+    "observed_at": "2026-08-01T04:59:00-04:00",
     "pull_request": 1,
     "pull_request_state": "open",
     "draft": true,
     "mergeable": true,
     "reported_commit_status_contexts": 0,
     "reported_commit_status": "none-reported",
-    "note": "PR #1 is the active integration pull request. GitHub reported no commit status contexts; no CI pass is being claimed."
+    "note": "PR #1 is the active integration pull request. Combined regression passed by owner confirmation. GitHub reported no commit status contexts; no CI pass is being claimed."
   },
   "release_validation": {
     "windows_package_build": "passed-by-owner-output",
     "required_package_files": "passed-by-owner-output",
     "clean_folder_remote_obs_smoke_test": "passed-by-owner-confirmation",
     "phase_2_pr_8_merge": "merged-at-670e108f695ca76ec53b032a6bff51b562ef20d3",
-    "combined_lan_regression": "pending",
+    "combined_lan_regression": "passed-by-owner-confirmation",
     "default_demo_model": "not-bundled",
     "remote_certificate_requirement": "Install the generated root certificate on each remote Windows browser or OBS computer and restart browser processes."
   },
@@ -50,6 +50,19 @@
     "source_head_sha": "03ba6e4a1b0b779bc801597704832c499336558b",
     "merge_commit_sha": "670e108f695ca76ec53b032a6bff51b562ef20d3",
     "result": "merged-by-explicit-owner-approval"
+  },
+  "last_validation": {
+    "validated_at": "2026-08-01T04:59:00-04:00",
+    "working_branch": "agent/lan-mode",
+    "pull_request": 1,
+    "result": "combined-lan-regression-passed-by-owner-confirmation",
+    "scope": [
+      "localhost-only default launcher and ordinary overlay",
+      "secure LAN registration, global models, private assets, model selection, and emotes",
+      "AI Actor lifecycle, overlays, expressions, speaking state, reset, emotes, and nested sub-animations",
+      "Streamer.bot actor API and serial mapped TTS cleanup",
+      "remote main and actor OBS rendering and LAN restart recovery"
+    ]
   },
   "local_checks": [
     {
@@ -118,6 +131,6 @@
   "safety": {
     "update_mode": "Use git pull --ff-only so an update cannot silently create a merge commit.",
     "dirty_checkout": "Commit, stash, or intentionally discard local changes before updating.",
-    "pr_promotion": "PR #1 must remain draft and unmerged until combined regression passes and the owner explicitly instructs each promotion action."
+    "pr_promotion": "Combined regression passed. PR #1 must remain draft and unmerged until the owner explicitly instructs marking it ready and, separately, merging it."
   }
 }
