@@ -14,13 +14,20 @@
     "expected_base_rule": "origin/agent/lan-mode must be an ancestor of local HEAD."
   },
   "github_snapshot": {
-    "observed_at": "2026-08-01T02:30:00-04:00",
+    "observed_at": "2026-08-01T03:59:00-04:00",
     "pull_request_state": "open",
     "draft": true,
     "mergeable": true,
     "reported_commit_status_contexts": 0,
     "reported_commit_status": "none-reported",
-    "note": "GitHub reported no commit status contexts for the observed PR head. Local repository checks and live validation remain required."
+    "note": "GitHub reported no commit status contexts for the observed PR head. No CI pass is being claimed."
+  },
+  "release_validation": {
+    "windows_package_build": "passed-by-owner-output",
+    "required_package_files": "passed-by-owner-output",
+    "clean_folder_remote_obs_smoke_test": "passed-by-owner-confirmation",
+    "default_demo_model": "not-bundled",
+    "remote_certificate_requirement": "Install the generated root certificate on each remote Windows browser or OBS computer and restart browser processes."
   },
   "last_verified_checkout": {
     "verified_at": "2026-07-29T09:53:00-04:00",
@@ -30,61 +37,22 @@
     "base_branch": "agent/lan-mode",
     "pull_request": 8,
     "result": "accepted-by-owner-for-progression",
-    "note": "This SHA is a historical verified checkout. Later documentation commits advance the branch head; always fetch the expected head ref before beginning work."
+    "note": "This SHA is historical. Always fetch the expected head ref before beginning work."
   },
   "local_checks": [
-    {
-      "id": "working-branch",
-      "command": "git branch --show-current",
-      "expected": "agent/ai-actors-control-panel"
-    },
-    {
-      "id": "expected-head",
-      "command": "git rev-parse HEAD && git rev-parse origin/agent/ai-actors-control-panel",
-      "expected": "Both commands print the same SHA."
-    },
-    {
-      "id": "ahead-behind",
-      "command": "git rev-list --left-right --count HEAD...origin/agent/ai-actors-control-panel",
-      "expected": "0 0"
-    },
-    {
-      "id": "clean-worktree",
-      "command": "git status --short",
-      "expected": "No output."
-    },
-    {
-      "id": "base-ancestry",
-      "command": "git merge-base --is-ancestor origin/agent/lan-mode HEAD",
-      "expected": "Exit code 0."
-    },
-    {
-      "id": "project-records",
-      "command": "npm run status:check",
-      "expected": "All checks pass."
-    }
+    {"id":"working-branch","command":"git branch --show-current","expected":"agent/ai-actors-control-panel"},
+    {"id":"expected-head","command":"git rev-parse HEAD && git rev-parse origin/agent/ai-actors-control-panel","expected":"Both commands print the same SHA."},
+    {"id":"ahead-behind","command":"git rev-list --left-right --count HEAD...origin/agent/ai-actors-control-panel","expected":"0 0"},
+    {"id":"clean-worktree","command":"git status --short","expected":"No output."},
+    {"id":"base-ancestry","command":"git merge-base --is-ancestor origin/agent/lan-mode HEAD","expected":"Exit code 0."},
+    {"id":"project-records","command":"npm run status:check","expected":"All checks pass."}
   ],
   "commands": {
-    "fresh_checkout": [
-      "git clone https://github.com/XorishiTtv/angelssword-adventurers-overlay.git",
-      "cd angelssword-adventurers-overlay",
-      "git fetch --prune origin",
-      "git switch --track -c agent/ai-actors-control-panel origin/agent/ai-actors-control-panel",
-      "npm ci",
-      "npm run status:check"
-    ],
     "update_existing_checkout": [
       "git status --short",
       "git fetch --prune origin",
       "git switch agent/ai-actors-control-panel",
       "git pull --ff-only origin agent/ai-actors-control-panel",
-      "npm ci",
-      "npm run status:check"
-    ],
-    "recover_incidental_lockfile_change": [
-      "git diff -- package-lock.json",
-      "git restore package-lock.json",
-      "Remove-Item -Recurse -Force node_modules",
       "npm ci",
       "npm run status:check"
     ],
@@ -96,15 +64,15 @@
   "dependency_install_policy": {
     "checkout_command": "npm ci",
     "reason": "Install exactly from package-lock.json without an incidental lockfile rewrite.",
-    "audit_rule": "Do not run npm audit fix automatically during checkout verification because it may change dependency versions and package-lock.json."
+    "audit_rule": "Do not run npm audit fix automatically during checkout verification."
   },
   "sha_policy": {
     "source_of_truth": "The fetched remote tracking ref origin/agent/ai-actors-control-panel.",
-    "rule": "Do not treat a SHA written inside this repository as permanently current because the commit that updates the record creates a new head SHA.",
-    "handoff_rule": "Every work handoff must report the exact current remote head SHA after all commits are complete."
+    "handoff_rule": "Every handoff must report the exact current remote head SHA after all commits are complete."
   },
   "safety": {
     "update_mode": "Use git pull --ff-only so an update cannot silently create a merge commit.",
-    "dirty_checkout": "Commit, stash, or intentionally discard local changes before updating. Do not use git reset --hard unless the work is backed up and the destructive action is deliberate."
+    "dirty_checkout": "Commit, stash, or intentionally discard local changes before updating.",
+    "pr_promotion": "PR #8 must remain draft and unmerged until the owner explicitly instructs otherwise."
   }
 }
