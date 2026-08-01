@@ -4,13 +4,13 @@
   "repository": "XorishiTtv/angelssword-adventurers-overlay",
   "updated_at": "2026-08-01",
   "active_work": {
-    "phase": "Mainline release administration",
-    "branch": "main",
+    "phase": "AI self-controlled actor integration",
+    "branch": "agent/ai-self-actor-controls",
     "base_branch": "main",
-    "pull_request": 1,
-    "pull_request_state": "merged",
-    "release_state": "integration-merged-to-main",
-    "current_task": "release-administration-decision"
+    "pull_request": 9,
+    "pull_request_state": "draft",
+    "release_state": "capability-foundation-complete-runtime-integration-pending",
+    "current_task": "universalbot-and-tts-integration"
   },
   "repository_handoff": {
     "policy_file": "repository-checks.json",
@@ -18,77 +18,72 @@
     "dependency_install_command": "npm ci",
     "local_check_command": "npm run status:check",
     "fetch_and_check_command": "npm run status:check -- --fetch",
-    "expected_head_ref": "origin/main",
+    "expected_head_ref": "origin/agent/ai-self-actor-controls",
     "expected_base_ref": "origin/main",
     "github_status_snapshot": {
-      "observed_at": "2026-08-01T05:17:00-04:00",
-      "pull_request": 1,
-      "pull_request_state": "closed",
-      "merged": true,
-      "draft": false,
-      "mergeable": false,
-      "source_head_sha": "60b8c1b4f6f6b5de4f5ab4808a58b31e446e8b12",
-      "merge_commit_sha": "a7c17ed75aafe34dff62d88345a75278665fd564",
+      "observed_at": "2026-08-01T06:25:29-04:00",
+      "pull_request": 9,
+      "pull_request_state": "open",
+      "merged": false,
+      "draft": true,
+      "mergeable": "pending-github-calculation",
+      "source_head_sha": "73552b12371d68bba2c27ebff07e28817beeae0e",
       "reported_commit_status_contexts": 0,
       "status": "none-reported"
     }
   },
   "completed": [
     {
-      "id": "secure-lan-and-ai-actors",
-      "title": "Secure LAN and AI Actor integration",
+      "id": "mainline-secure-lan-ai-actors",
+      "title": "Secure LAN and AI Actor integration on main",
       "status": "complete-live-tested-and-merged-to-main",
       "details": [
-        "PR #8 merged Phase 2 AI Actors into agent/lan-mode at 670e108f695ca76ec53b032a6bff51b562ef20d3",
-        "PR #1 merged the combined integration into main at a7c17ed75aafe34dff62d88345a75278665fd564"
+        "PR #1 merged the prior secure LAN and AI Actor integration into main at a7c17ed75aafe34dff62d88345a75278665fd564"
       ]
     },
     {
-      "id": "production-tts",
-      "title": "Serial multi-actor production TTS",
-      "status": "complete-and-live-tested",
+      "id": "actor-capabilities-endpoint",
+      "title": "Sanitized actor capability discovery endpoint",
+      "status": "complete-local-harness-validated",
       "details": [
-        "gnisu and dascribe use separate actors",
-        "Unmapped identities retain the original fallback",
-        "One synthesized voice plays at a time by design"
+        "Actor-token authentication protects GET /api/actors/:actorId/capabilities",
+        "Responses contain dedicated installed expressions and URL-free Type 1, Type 2, and nested sub-emote names",
+        "A local harness verified authentication, nested discovery, and absence of token, token hash, media filename, and asset URL leakage"
       ]
     },
     {
-      "id": "windows-package",
-      "title": "LAN-enabled Windows release package",
-      "status": "complete-and-owner-verified",
+      "id": "streamerbot-capabilities-helper",
+      "title": "Streamer.bot actor capabilities companion helper",
+      "status": "source-complete-compilation-pending",
       "details": [
-        "Both Windows executables and the final 30.5 MB release archive were produced",
-        "Required launchers, checksums, certificate setup, documentation, and helper source were present"
+        "The helper publishes sanitized capability JSON, expression text, emote text, nested paths, and an AI prompt block",
+        "Private-LAN and HTTPS destination checks are retained"
       ]
     },
     {
-      "id": "clean-folder-and-regression",
-      "title": "Clean-folder and combined LAN regression",
-      "status": "complete-by-owner-confirmation",
+      "id": "ai-self-control-design",
+      "title": "AI self-control protocol and integration guide",
+      "status": "complete",
       "details": [
-        "Localhost mode, secure LAN registration and assets, AI Actors, Streamer.bot, remote OBS rendering, and restart recovery worked",
-        "Remote OBS required the generated LAN root certificate to be trusted on the OBS computer"
+        "The hidden ACTOR_CONTROL protocol, profile mapping, queue isolation, playback timing, failure handling, and security boundary are documented"
       ]
     }
   ],
   "validation": [
-    {"id": "main-and-actor-overlays", "status": "passed"},
-    {"id": "actor-emotes", "status": "passed"},
-    {"id": "streamerbot-methods", "status": "passed"},
-    {"id": "reconnect-and-recovery", "status": "passed-observationally"},
-    {"id": "multi-actor-production-isolation", "status": "passed-serial-queue"},
-    {"id": "packaged-windows-release", "status": "passed"},
-    {"id": "combined-lan-regression", "status": "passed-by-owner-confirmation"},
-    {"id": "mainline-promotion", "status": "passed"}
+    {"id": "actor-capabilities-js-syntax", "status": "passed"},
+    {"id": "lan-bootstrap-js-syntax", "status": "passed"},
+    {"id": "capability-authentication-harness", "status": "passed"},
+    {"id": "capability-expression-emote-catalog-harness", "status": "passed"},
+    {"id": "capability-response-secret-leak-harness", "status": "passed"},
+    {"id": "capability-helper-structural-check", "status": "passed-not-compiled"}
   ],
   "known_limits": [
-    {"id": "serial-production-tts", "details": "Production TTS intentionally uses one serial queue."},
-    {"id": "process-restart-held-emote", "details": "A full process restart cannot restore an emote that was held before shutdown."},
-    {"id": "performance-benchmark", "details": "No quantitative CPU or GPU benchmark has been recorded."},
-    {"id": "github-status-contexts", "details": "No commit status contexts were reported for the PR #1 merge commit; no CI pass is claimed."},
-    {"id": "default-demo-model", "details": "The optional Queri demo model was not bundled because it was absent from public/assets."},
-    {"id": "remote-certificate-trust", "details": "Each remote Windows browser or OBS computer must trust the generated LAN root certificate and restart browser processes."}
+    {"id": "universalbot-not-live-tested", "details": "The personalized UniversalBot integration script has been prepared separately but has not been compiled or live-tested in Streamer.bot."},
+    {"id": "tts-queue-not-integrated", "details": "Validated visual intent is not yet copied into immutable production TTS queue items or synchronized with playback."},
+    {"id": "helper-not-compiled", "details": "The companion capability helper source has not yet been compiled in Streamer.bot."},
+    {"id": "regression-not-run", "details": "Remote OBS, LAN restart, Windows package, and cross-actor regression have not been repeated for this feature branch."},
+    {"id": "github-status-contexts", "details": "No commit status contexts are reported; no CI pass is claimed."},
+    {"id": "expression-protocol", "details": "Capability discovery dynamically reports installed assets for the existing five logical expression names; arbitrary expression names are not part of this phase."}
   ],
   "security": {
     "do_not_store": [
@@ -98,6 +93,6 @@
       "certificate private keys",
       "certificate passwords"
     ],
-    "note": "Repository records must not contain live credentials or private certificate material."
+    "note": "OpenAI receives only sanitized capability names. Raw actor credentials remain in persisted Streamer.bot globals and are never written to prompts or repository records."
   }
 }
