@@ -20,7 +20,7 @@ All notable user-visible changes to AS Adventurer are recorded here.
 - `repository-checks.json` and `LOCAL_CHECKOUT.md` for active branch, base, PR, expected-ref, checkout, update, and handoff rules.
 - `npm run status:check` for local branch, expected head, ahead/behind, base ancestry, clean-worktree, and project-record validation.
 - `streamerbot/PRODUCTION_TTS_INTEGRATION.md` with a one-actor-first production wiring and cleanup runbook.
-- `streamerbot/MULTI_ACTOR_TTS_TEST.md` with mapped-identity isolation, overlapping actor, stale-session, actor-scope, and unmapped-fallback checks.
+- `streamerbot/MULTI_ACTOR_TTS_TEST.md` with serial mapped-identity routing, queue isolation, actor-scope, and unmapped-fallback checks.
 - `streamerbot/actor-tts-mapping.example.json` as a documentation-only identity-to-actor worksheet containing no raw token values.
 
 ### Changed
@@ -29,8 +29,9 @@ All notable user-visible changes to AS Adventurer are recorded here.
 - Actor overlays replay their selected model after reconnecting.
 - Held Type 2 emotes can be restored after a transient socket interruption while the LAN process remains running.
 - Same-computer OBS and Streamer.bot setup uses the certificate-valid `https://localhost:3000` origin.
-- Documentation now separates general setup, LAN setup, AI Actor management, Streamer.bot use, production TTS integration, multi-actor testing, project status, roadmap, and local checkout information.
-- The first production TTS actor integration is complete; the end-to-end multi-actor isolation test is now the immediate roadmap item.
+- Documentation now separates general setup, LAN setup, AI Actor management, Streamer.bot use, production TTS integration, serial multi-actor testing, project status, roadmap, and local checkout information.
+- Production TTS keeps one serial queue by design so only one synthesized voice is audible at a time.
+- The multi-actor production gate is complete for `gnisu` and `dascribe`; the LAN-enabled Windows package build is now the immediate roadmap item.
 - Repository updates use `git pull --ff-only`, and work handoffs report the exact current remote head after all commits are complete.
 - Fresh and updated verification checkouts use `npm ci` instead of `npm install` so dependencies come from the committed lockfile without an incidental lockfile rewrite.
 
@@ -50,14 +51,17 @@ All notable user-visible changes to AS Adventurer are recorded here.
 - The Streamer.bot helper compiled successfully and exposed all seven named methods.
 - Streamer.bot expression, start, stop, reset, emote, sub-emote, release, cross-action session lookup, and stale-session protection passed live testing.
 - The production `gnisu` identity completed `StartTts`, direct blocking Kokoro playback, and `StopTts`; its actor returned to idle after playback.
-- The successful production cycle used the repository helper and did not use the stale capability-discovery path.
+- The production `dascribe` identity completed the same lifecycle against a different actor.
+- Requests queued close together were processed sequentially, with the first actor returning to idle before the next actor started.
+- An unmapped broadcaster identity remained on the direct blocking OpenAI playback path without starting an actor.
+- The accepted serial-queue design makes overlapping production speech and concurrent same-actor cleanup not applicable release requirements.
+- The successful production cycles used the repository helper and did not use the stale capability-discovery path.
 - Overlay recovery behavior passed the project harnesses and live observational testing.
 - The repository status checker passed Node syntax validation, correctly detected an incidental `package-lock.json` change, and the owner authorized progression after reporting the expected branch, base, PR, and head values.
 - GitHub reported no commit status contexts for the observed PR #8 head, so no CI pass is being claimed.
 
 ### Remaining before release promotion
 
-- Map a second production identity and run the end-to-end multi-actor isolation, overlap, stale-session, actor-scope, and unmapped-fallback tests.
 - Build the LAN-enabled Windows release package.
 - Run a clean-folder package smoke test.
 - Mark and merge draft pull requests only after explicit owner approval.
