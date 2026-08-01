@@ -10,7 +10,7 @@
     "pull_request": 8,
     "pull_request_state": "draft",
     "release_state": "implementation-complete-release-validation-pending",
-    "current_task": "end-to-end-multi-actor-tts-test"
+    "current_task": "packaged-windows-build"
   },
   "repository_handoff": {
     "policy_file": "repository-checks.json",
@@ -22,7 +22,7 @@
     "expected_base_ref": "origin/agent/lan-mode",
     "expected_head_rule": "After fetching and updating, local HEAD must equal the expected head ref.",
     "github_status_snapshot": {
-      "observed_at": "2026-08-01T01:37:00-04:00",
+      "observed_at": "2026-08-01T02:30:00-04:00",
       "pull_request_state": "open",
       "draft": true,
       "mergeable": true,
@@ -140,6 +140,21 @@
         "The stale capability-discovery helper instance was replaced",
         "Raw actor tokens remained outside repository files and logs"
       ]
+    },
+    {
+      "id": "multi-actor-production-tts",
+      "title": "Serial multi-actor production TTS isolation",
+      "status": "complete-and-live-tested",
+      "details": [
+        "Mapped gnisu and dascribe to different actor IDs and exercised both production routes",
+        "Each mapped identity started only its assigned actor before blocking Kokoro playback",
+        "Each matching StopTts completed after playback and returned the assigned actor to idle",
+        "A broadcaster identity with no actor mapping remained on the original direct blocking OpenAI playback path",
+        "The single production queue intentionally serializes voices so streams remain clean and understandable",
+        "Overlapping production speech and concurrent same-actor cleanup are not applicable under the accepted serial-queue design",
+        "The helper's actor-scoped expression, emote, and stale-session protections were validated separately in prior live tests",
+        "No raw actor token appeared in repository files or reviewed logs"
+      ]
     }
   ],
   "validation": [
@@ -180,16 +195,20 @@
     },
     {
       "id": "multi-actor-production-isolation",
-      "status": "next",
-      "details": "A second mapped identity, overlapping actors, same-actor stale cleanup, actor-scoped expression/emote behavior, and an unmapped fallback remain to be exercised."
+      "status": "passed-serial-queue",
+      "details": "The mapped identities gnisu and dascribe used distinct actors and completed isolated start, blocking playback, and stop lifecycles. An unmapped broadcaster identity retained direct blocking OpenAI playback. Overlap and concurrent production stale-cleanup tests are not applicable because the accepted single queue intentionally serializes all voices."
     },
     {
       "id": "packaged-windows-release",
-      "status": "pending",
-      "details": "A full LAN-enabled Windows package and clean-folder smoke test remain."
+      "status": "next",
+      "details": "Build the full LAN-enabled Windows package, then run the clean-folder smoke test."
     }
   ],
   "known_limits": [
+    {
+      "id": "serial-production-tts",
+      "details": "Production TTS intentionally uses one serial queue. Multiple voices do not overlap; later requests wait until the active playback and matching actor stop complete."
+    },
     {
       "id": "process-restart-held-emote",
       "details": "Held emote state is in memory. A full LAN process restart cannot restore a held emote that existed before the process stopped."
