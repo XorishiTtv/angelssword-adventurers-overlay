@@ -84,11 +84,12 @@
       "order": 8,
       "id": "combined-lan-regression",
       "title": "Retest the combined LAN integration branch",
-      "status": "next",
-      "blocked_by": [],
+      "status": "complete",
+      "completed_at": "2026-08-01T04:59:00-04:00",
       "working_branch": "agent/lan-mode",
       "base_branch": "main",
       "pull_request": 1,
+      "completion_note": "The owner confirmed the combined branch was in working order across localhost mode, secure LAN registration and assets, AI Actors, Streamer.bot serial TTS, remote OBS rendering, and LAN restart recovery.",
       "acceptance_criteria": [
         "The default launcher remains localhost-only and the normal control panel and overlay still work",
         "Secure LAN certificate setup and trusted remote HTTPS access work",
@@ -102,11 +103,11 @@
     {
       "order": 9,
       "id": "merge-pr-1",
-      "title": "Promote the combined secure LAN integration to main",
-      "status": "blocked",
-      "blocked_by": ["combined-lan-regression"],
+      "title": "Owner decision for PR #1 promotion to main",
+      "status": "next",
+      "blocked_by": [],
       "requires_explicit_owner_approval": true,
-      "notes": "After regression validation, marking PR #1 ready and merging it each require explicit owner instructions."
+      "notes": "Combined regression is complete. Marking PR #1 ready and merging PR #1 remain separate actions and each requires an explicit owner instruction."
     },
     {
       "order": 10,
