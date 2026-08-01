@@ -5,12 +5,14 @@
 const machineMode = require('./machine-mode');
 const { installGlobalModelMode } = require('./global-model-mode');
 const { installActorMode } = require('./actor-mode');
+const { installActorCapabilitiesMode } = require('./actor-capabilities-mode');
 const nativeInstallMachineMode = machineMode.installMachineMode;
 
 machineMode.installMachineMode = function installMachineGlobalAndActorModes(options) {
   const result = nativeInstallMachineMode(options);
   installGlobalModelMode({ appDir: options.appDir });
   const actorMode = installActorMode({ appDir: options.appDir });
+  installActorCapabilitiesMode({ appDir: options.appDir });
 
   return {
     ...result,
